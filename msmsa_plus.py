@@ -20,7 +20,7 @@ class MSMSA:
         # self.hor_candids = range(min_memory_len,self.num_candids)
         # print(self.hor_candids)
         self.num_candids = len(self.hor_candids)
-        self.validity_horizon = 1
+        self.validity_horizon = np.zeros(self.num_anchors)
         self.memory_size = np.max(self.hor_candids)
         self.errors = []
         self.memory = []
@@ -54,7 +54,7 @@ class MSMSA:
         self.t += 1
 
     def update_(self, model, error):
-        
+        models = []
         if self.t > 1:
             for i, tau in enumerate(self.hor_candids):
                 update_period = max(1,int(tau/self.update_freq_factor))
@@ -92,21 +92,22 @@ class MSMSA:
         # self.avars = self.replace_nan_with_max(self.avars)
 
         # average between all anchor points (for the time being)
-        self.avars_scalarized = np.mean(self.avars, axis=1)
+        # self.avars_scalarized = np.mean(self.avars, axis=1)
 
-
-        # find the minimum and the validity horizon
-        if not all(np.isnan(v) for v in self.avars_scalarized): # check for warm start condition
-            idx = self.index_of_minimum(self.avars_scalarized)
-            self.validity_horizon = min(self.t, self.hor_candids[idx])
-            model.reset()
-            model.fit(self.memory[-self.validity_horizon:])
-            return model, self.validity_horizon
-        else: # means all values in avars are nan and hence we are in the cold start period
-            self.validity_horizon = self.t
-            model.reset()
-            model.fit(self.memory[-self.validity_horizon:])
-            return model, self.validity_horizon
+        for k in range(self.num_anchors):
+            # find the minimum and the validity horizon
+            if not all(np.isnan(v) for v in self.avars[:,k]): # check for warm start condition
+                idx = self.index_of_minimum(self.avars[:,k])
+                self.validity_horizon[k] = min(self.t, self.hor_candids[idx])
+                model.reset()
+                model.fit(self.memory[-self.validity_horizon[k]:])
+                # return model, self.validity_horizon[k]
+            else: # means all values in avars are nan and hence we are in the cold start period
+                self.validity_horizon = self.t
+                model.reset()
+                model.fit(self.memory[-self.validity_horizon:])
+            models.append(model)
+        return models, self.validity_horizon
 
     def get_allan_variance(self, params):
         params = np.array(params)
