@@ -35,7 +35,12 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
 
 
     if dataset_name == 'Teconer':
-        df = pd.read_csv('Teconer.csv', usecols = ['Date', 'Time', 'Latitude', 'Longitude', 'Friction', 'Tsurf', 'Ta', 'SensorName', 'VehicleID', 'Speed']).dropna()
+        # check if the dataset is already downloaded if not download it
+        if not os.path.exists('datasets/Teconer.csv'):
+            print('Downloading Teconer dataset...')
+            os.system('wget https://drive.google.com/file/d/1uEMMEfowbi5m8I2zBay4o7x53eClTE5B/view?usp=drive_link -P datasets/')
+        # read the dataset
+        df = pd.read_csv('datasets/Teconer.csv', usecols = ['Date', 'Time', 'Latitude', 'Longitude', 'Friction', 'Tsurf', 'Ta', 'SensorName', 'VehicleID', 'Speed']).dropna()
         # sort the df by date and time
         df['Date'] = pd.to_datetime(df['Date'])
         df['Time'] = pd.to_datetime(df['Time'])
@@ -44,7 +49,7 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
         data_y = df['Friction'].to_numpy()
 
     if dataset_name == 'NYC taxi':
-        df = pd.read_csv('nyc_taxi_train.csv').dropna()
+        df = pd.read_csv('datasets/nyc_taxi_train.csv').dropna()
         df = df.reset_index().rename(columns={'index': 'index_col'})
         # create an additional distance feature
         df['dist'] = np.sqrt((df['pickup_longitude']-df['dropoff_longitude'])**2 + (df['pickup_latitude']-df['dropoff_latitude'])**2)
@@ -62,7 +67,7 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
         # data_X = df[['dist','pickup_hour_sin','pickup_hour_cos']].to_numpy()[:10_000]
 
     if dataset_name == 'Household energy':
-        df = pd.read_csv('household_power_consumption.csv').dropna()
+        df = pd.read_csv('datasets/household_power_consumption.csv').dropna()
         df = df.reset_index().rename(columns={'index': 'index_col'})
         data_y = df['Sub_metering_3'].to_numpy()[:10_000]
         data_X = df[['index_col','Global_active_power','Global_active_power','Global_reactive_power','Voltage','Global_intensity','Sub_metering_1','Sub_metering_2']].to_numpy()[:10_000]
@@ -75,13 +80,13 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
         data_y = df['cnt'].to_numpy()
 
     if dataset_name == 'Bike (hourly)':
-        df = pd.read_csv('bike_hour.csv')
+        df = pd.read_csv('datasets/bike_hour.csv')
         data_X = df[['workingday','mnth','holiday','weathersit','season','atemp','temp','hum','windspeed']].to_numpy()
         # data_X = df[['atemp','temp','hum','windspeed']].to_numpy()
         data_y = df['cnt'].to_numpy()
 
     if dataset_name == 'Melbourn housing':
-        df = pd.read_csv('Melbourne_housing_full_sorted.csv').dropna()
+        df = pd.read_csv('datasets/Melbourne_housing_full_sorted.csv').dropna()
         data_y = df['Price'].to_numpy()
         data_X = df[['Lattitude','Longtitude','YearBuilt','BuildingArea','Landsize','Car','Bathroom','Bedroom2','Distance']].to_numpy()
         # data_X = df[['YearBuilt','BuildingArea','Landsize','Car','Bathroom','Bedroom2','Distance']].to_numpy()
@@ -243,7 +248,7 @@ models = [learning_models.Linear(),
 
 # noise_vars = [0, 1, 2, 3, 4, 5]
 noise_vars = ['-1']
-num_monte = 10
+num_monte = 1
 
 logs = pd.DataFrame()
 for monte in tqdm(range(num_monte)):
@@ -253,10 +258,10 @@ for monte in tqdm(range(num_monte)):
             for noise_var in tqdm(noise_vars, leave=False):
                 dataset_configs['noise_var'] = noise_var
                 validators = [
-                            # msmsa_plus.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
+                            msmsa_plus.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
                             msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
                             # davar_reg.DAVAR(lam=10),
-                            kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
+                            # kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
                             # adwin_reg.ADWIN(delta=0.002),
                             # ddm_reg.DDM(alpha_w=2, alpha_d=3),
                             # ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),

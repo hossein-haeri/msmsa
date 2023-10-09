@@ -53,6 +53,23 @@ class MSMSA:
             self.memory[-self.memory_size:]
         self.t += 1
 
+
+    def predict_(self, X, retrain=True):
+        # check and see which anchor point is closest to the input X size=(self.num_features)
+
+        # calculate the distance between X and all anchor points
+        dists = np.linalg.norm(self.anchors - X, axis=1)
+        # find the index of the anchor point that is closest to X
+        idx = np.argmin(dists)
+        # identify the the validity horizon of the closest anchor point
+        validity_horizon = self.validity_horizon[idx]
+
+
+
+
+
+
+
     def update_(self, model, error):
         models = []
         if self.t > 1:
@@ -107,7 +124,7 @@ class MSMSA:
                 model.reset()
                 model.fit(self.memory[-self.validity_horizon:])
             models.append(model)
-        return models, self.validity_horizon
+        return models, 0
 
     def get_allan_variance(self, params):
         params = np.array(params)
