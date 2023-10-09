@@ -1,0 +1,211 @@
+import numpy as np
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+from sklearn.pipeline import make_pipeline, Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import Ridge
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.svm import SVR
+
+
+class MovMean:
+    def __init__(self):
+        self.y_pred_history = []
+        self.error_history = []
+        self.mean = 0
+        
+        
+
+    def fit(self, train_data):
+        # X = [sample[0] for sample in train_data]
+        y = [sample[1] for sample in train_data]
+        if len(train_data) > 1:
+            self.mean = np.mean(y)
+        else:
+            self.mean = y[0]
+            
+
+    def predict(self, X=None):
+        pred = self.mean
+        self.y_pred_history.append(pred)
+        return pred
+    
+    def get_parameters(self):
+        return [self.mean]
+
+    def reset(self):
+        self.y_pred_history = []
+        self.error_history = []
+        self.mean = 0
+
+class KNN:
+    def __init__(self, n_neighbors=10):
+        self.y_pred_history = []
+        self.error_history = []
+        self.n_neighbors = n_neighbors
+        self.model = KNeighborsRegressor(n_neighbors=self.n_neighbors)
+
+
+
+    def fit(self, train_data):
+        X = [sample[0] for sample in train_data]
+        y = [sample[1] for sample in train_data]
+        if len(train_data) > self.n_neighbors:
+            self.model.fit(X, y)
+        else:
+            pass
+
+    def predict(self, X):
+        pred = self.model.predict([X])
+        self.y_pred_history.append(pred)
+        return pred
+
+    def get_parameters(self):
+        return self.model.coef_+self.model.intercept_
+    
+    def reset(self):
+        self.__init__()
+
+
+class DecissionTree:
+    def __init__(self, max_depth=5):
+        self.max_depth = max_depth
+        self.model = DecisionTreeRegressor(max_depth=self.max_depth)
+        self.y_pred_history = []
+        self.error_history = []
+
+
+    def fit(self, train_data):
+        X = [sample[0] for sample in train_data]
+        y = [sample[1] for sample in train_data]
+        if len(train_data) > 1:
+            self.model.fit(X, y)
+        else:
+            pass
+
+    def predict(self, X):
+        pred = self.model.predict([X])
+        self.y_pred_history.append(pred)
+        return pred
+
+    def get_parameters(self):
+        return self.model.coef_+self.model.intercept_
+    
+    def reset(self):
+        self.__init__(max_depth=self.max_depth)
+
+        
+
+class Linear:
+    def __init__(self, alpha=10):
+        self.alpha = alpha
+        # self.model = LinearRegression(fit_intercept = True)
+        self.model = Ridge(alpha=self.alpha, fit_intercept = True)
+        self.y_pred_history = []
+        self.error_history = []
+
+
+    def fit(self, train_data):
+        X = [sample[0] for sample in train_data]
+        y = [sample[1] for sample in train_data]
+        if len(train_data) > 1:
+            self.model.fit(X, y)
+
+    def predict(self, X):
+        pred = self.model.predict([X])
+        self.y_pred_history.append(pred)
+        return pred
+
+    def get_parameters(self):
+        return self.model.coef_+self.model.intercept_
+    
+    def reset(self):
+        self.__init__()
+
+
+
+class SVReg:
+    def __init__(self):
+        # self.model = SVR(C=1.0, epsilon=0.2)
+        self.model = SVR(kernel='rbf', C=10, gamma=0.3, epsilon=.1)
+        self.y_pred_history = []
+        self.error_history = []
+
+
+    def fit(self, train_data):
+        X = [sample[0] for sample in train_data]
+        y = [sample[1] for sample in train_data]
+        if len(train_data) > 1:
+            self.model.fit(X, y)
+        else:
+            pass
+
+    def predict(self, X):
+        pred = self.model.predict([X])
+        self.y_pred_history.append(pred)
+        return pred
+
+    def get_parameters(self):
+        return self.model.coef_+self.model.intercept_
+    
+    def reset(self):
+        self.__init__()
+
+
+
+class Polynomial:
+    def __init__(self, degree=3, fit_intercept=True):
+        self.degree = degree
+        self.fit_intercept=fit_intercept
+        self.model = Pipeline([         
+                                        # ('scaler', StandardScaler()),
+                                        ('poly',PolynomialFeatures(degree=self.degree)),
+                                        # ('linear_reg', LinearRegression(fit_intercept = fit_intercept))
+                                        ('ridge', Ridge(alpha=10, fit_intercept = True))
+                                        ])
+        self.y_pred_history = []
+        self.error_history = []
+
+
+    def fit(self, train_data):
+        X = [sample[0] for sample in train_data]
+        y = [sample[1] for sample in train_data]
+
+        if len(train_data) > 1:
+            self.model.fit(X, y)
+        else:
+            pass
+
+    def predict(self, X):
+        X = X.reshape(1, -1)
+        pred = self.model.predict(X)
+        self.y_pred_history.append(pred)
+        return pred
+
+    def get_parameters(self):
+        # return self.model.coef_
+        # print(self.model.named_steps)
+        # print(self.model.named_steps['linearregression'].get_parameters())
+        return self.model.named_steps['linearregression'].coef_+self.model.named_steps['linearregression'].intercept_
+
+    def reset(self):
+        self.degree = self.degree
+        self.model = Pipeline([         
+                                        # ('scaler', StandardScaler()),
+                                        ('poly',PolynomialFeatures(degree=self.degree)),
+                                        # ('linear_reg', LinearRegression(fit_intercept = fit_intercept))
+                                        ('ridge', Ridge(alpha=10, fit_intercept = True))
+                                        ])
+        self.y_pred_history = []
+        self.error_history = []
+
+
+# if __name__ == '__main__':
+#     model = Linear()
+#     a = [1,2]
+#     X_train = np.random.uniform(-1,1,[100,2])
+#     y_train = [np.dot(a,x) + np.random.normal(0,0.05) for x in X_train]
+#     model.fit(X_train,y_train)
+#     param = model.get_parameters()
+#     # print(param)
