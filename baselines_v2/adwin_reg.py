@@ -5,15 +5,18 @@ from river.drift import ADWIN as AdaptiveWindowing
 class ADWIN(AdaptiveWindowing):
     def __init__(self,delta=0.002):
         super().__init__(delta=delta)
-        self.model = None
+        self.base_learner = None
+        self.base_learner_is_fitted = False
         self.memory = []
         self.change_flag = False
         self.change_flag_history = []
         self.method_name = 'ADWIN'
         self.hyperparams = {'delta':delta
+                            # 'min_memory_len':10
                             }
-    def add_sample(self, sample):
-        self.memory.append(sample)
+        
+    def add_sample(self, X, y):
+        self.memory.append((X, y))
 
     def detect_(self, error):
         self.update(np.absolute(error))
@@ -23,7 +26,6 @@ class ADWIN(AdaptiveWindowing):
 
     def update_memory(self):
         if self.change_flag:
-            # self.memory = self.memory[-self._width:]
             w = (int(self.width))
             self.memory = self.memory[-w:]
 
@@ -36,18 +38,22 @@ class ADWIN(AdaptiveWindowing):
         self.change_flag = False
         self.change_flag_history = []
         
-    def update_online_model(self, sample):
-        self.add_sample(sample)
-        y = sample[1]
-        y_hat = self.predict_online_model(sample[0])
+    def update_online_model(self, X, y):
+        self.add_sample(X, y)
+        if self.base_learner_is_fitted:
+            y_hat = self.predict_online_model(X)
+        else:
+            y_hat = 0
         error = self.mean_absoulte_error(y, y_hat)
         self.detect_(error)
-        self.model.reset()
-        self.model.fit(self.memory)
+        self.base_learner.reset()
+        self.base_learner.fit(self.memory)
+        if len(self.memory) > 1:
+            self.base_learner_is_fitted = True
         return None
     
-    def predict_online_model(self, X, y):
-        return self.model.predict(X)
+    def predict_online_model(self, X):
+        return self.base_learner.predict(X)
     
     
     def mean_absoulte_error(self, y_true, y_pred):
