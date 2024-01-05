@@ -141,7 +141,7 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
     data_y = scaler_y.fit_transform(data_y.reshape(-1, 1)).squeeze()
     return data_X, data_y, scaler_y
 
-def run(model, online_model, dataset, dataset_configs, wandb_logrun):
+def run(model, online_model, dataset, dataset_configs):
         
     data_X, data_y, scaler_y = load_dataset(dataset,
                                                 hyperplane_dimension=dataset_configs['dim'],
@@ -149,29 +149,42 @@ def run(model, online_model, dataset, dataset_configs, wandb_logrun):
                                                 stream_size=dataset_configs['stream_size'],
                                                 drift_probability=dataset_configs['drift_prob'])
     
-    results = np.zeros([len(data_X),4])
-    valid_model = None
+    # results = np.zeros([len(data_X),4])
+    # valid_model = None
     y = 0
     pred_y = 0
     params = []
     update_info_list = []
+    validation_mae_list = []
     for k, (X, y) in enumerate(zip(data_X, data_y)):
         try:
-            pred_y = valid_model.predict(X)
+            pred_y = online_model.predict_online_model(X)
         except:
             # if prediction fails, use the previous prediction
             pred_y = pred_y
         pred_y = float(pred_y)
-        test_then_train_error = float(np.absolute(y - pred_y))
-
+        validation_mae = float(np.absolute(y - pred_y))
+        validation_mae_list.append(validation_mae)
 
         # online_model.add_sample([X, y])
         # valid_model, val_horizon = online_model.update_(model, e)
-        update_info = online_model.update_online_model([X, y])
-        update_info_list.append(update_info)
+        update_info = online_model.update_online_model(X, y)
+        # update_info_list.append(update_info)
 
 
-    run_summary
+    run_summary = { 'dataset': dataset,
+                    'stream_size': len(data_y),
+                    'method': online_model.method_name,
+                    'learning_model': type(model.model).__name__,
+                    'MAE': np.mean(validation_mae_list),
+                    # 'noise_var': dataset_configs['noise_var'],
+                    # 'STD': np.std(update_info_list),
+                    # 'RMSE': np.sqrt(np.mean(update_info_list**2)),
+                    # 'RRSE': np.sqrt(np.sum(update_info_list**2)/np.sum((data_y - np.mean(data_y))**2)),
+                    # 'TargetMean': np.mean(data_y),
+                    # 'TargetSTD': np.std(data_y),
+                    # 'MeanValidityHorizon': np.mean(update_info_list),
+                }
         # results[k,:] = [e, val_horizon, y, pred_y]
         # print(y, pred_y)
         # print(scaler.inverse_transform(y), scaler.inverse_transform(pred_y))
@@ -235,10 +248,10 @@ datasets = [
 #                    'drift_prob':0.01,
 #                    'dim': 10}
 
-dataset_configs = {'noise_var': '-1',
-                   'stream_size': '-1',
-                   'drift_prob':'-1',
-                   'dim': '-1'}
+dataset_configs = {'noise_var':     None,
+                   'stream_size':   None,
+                   'drift_prob':    None,
+                   'dim':           None}
 
 # datasets = ['Household energy']
 # dataset_name = datasets[1]
@@ -248,9 +261,10 @@ dataset_configs = {'noise_var': '-1',
 # # model = learning_models.KNN()
 # # model = learning_models.SVReg()
 # # model = learning_models.Polynomial()
-models = [learning_models.Linear(),
-          learning_models.DecissionTree(),
-        #   learning_models.SVReg()
+models = [
+            # learning_models.Linear(),
+            learning_models.DecissionTree(),
+            # learning_models.SVReg()
         ]
 
 # noise_vars = [0, 1, 2, 3, 4, 5]
@@ -265,11 +279,11 @@ for monte in tqdm(range(num_monte)):
             for noise_var in tqdm(noise_vars, leave=False):
                 dataset_configs['noise_var'] = noise_var
                 online_models = [
-                            msmsa_plus.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
-                            msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
+                            # msmsa_plus.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
+                            # msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
                             # davar_reg.DAVAR(lam=10),
-                            # kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
-                            # adwin_reg.ADWIN(delta=0.002),
+                            kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
+                            adwin_reg.ADWIN(delta=0.002),
                             # ddm_reg.DDM(alpha_w=2, alpha_d=3),
                             # ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),
                             # naive_reg.Naive()
@@ -281,20 +295,8 @@ for monte in tqdm(range(num_monte)):
                             dataset=dataset,
                             model=model,
                             dataset_configs=dataset_configs,
-                            wandb_logrun=wandb_logrun
                             )
                     
-                    if wandb_log:
-                        wandb.init( project='stream_learning',
-                                    mode="offline",
-                                    group=dataset,
-                                    job_type=online_model.method_name,
-                                    tags=[type(model.model).__name__],
-                                    config={'online_model': online_model.hyperparams, 
-                                            'online_model_name': online_model.method_name,   
-                                            'dataset': dataset_configs
-                                            }     
-                                        )
                     
                     # use pd concat to append run_summary to logs
                     logs = pd.concat([logs, pd.DataFrame([run_summary])], ignore_index=True)

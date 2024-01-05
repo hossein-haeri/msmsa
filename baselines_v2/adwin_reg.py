@@ -5,6 +5,7 @@ from river.drift import ADWIN as AdaptiveWindowing
 class ADWIN(AdaptiveWindowing):
     def __init__(self,delta=0.002):
         super().__init__(delta=delta)
+        self.model = None
         self.memory = []
         self.change_flag = False
         self.change_flag_history = []
@@ -12,11 +13,9 @@ class ADWIN(AdaptiveWindowing):
         self.hyperparams = {'delta':delta
                             }
     def add_sample(self, sample):
-        # self.add_element(sample[1])
         self.memory.append(sample)
 
     def detect_(self, error):
-        # self.add_element(np.absolute(error))
         self.update(np.absolute(error))
         self.change_flag = self.drift_detected
         self.update_memory()
@@ -37,9 +36,19 @@ class ADWIN(AdaptiveWindowing):
         self.change_flag = False
         self.change_flag_history = []
         
-    # def update(self, model, error):
-    def update_(self, model, error):
+    def update_online_model(self, sample):
+        self.add_sample(sample)
+        y = sample[1]
+        y_hat = self.predict_online_model(sample[0])
+        error = self.mean_absoulte_error(y, y_hat)
         self.detect_(error)
-        model.reset()
-        model.fit(self.memory)
-        return model, len(self.memory)
+        self.model.reset()
+        self.model.fit(self.memory)
+        return None
+    
+    def predict_online_model(self, X, y):
+        return self.model.predict(X)
+    
+    
+    def mean_absoulte_error(self, y_true, y_pred):
+        return np.mean(np.absolute(y_true - y_pred))
