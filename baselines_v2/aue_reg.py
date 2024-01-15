@@ -7,7 +7,8 @@ from sklearn.model_selection import cross_val_score
 
 class AUE:
     def __init__(self, min_memory_len=10, batch_size=100):
-        
+        self.base_learner_is_fitted = False
+        self.base_learner = None
         self.memory = []
         self.models_pool = []
         self.batch_size = batch_size
@@ -81,3 +82,19 @@ class AUE:
             self.models_pool = self.models_pool[0:self.max_num_models_in_pool]
         # return model, len(self.memory)
     
+    def update_online_model(self, X, y):
+        self.add_sample((X, y))
+        if self.base_learner_is_fitted:
+            y_hat = self.predict_online_model(X)
+        else:
+            y_hat = 0
+        error = self.mean_absoulte_error(y, y_hat)
+        self.detect_(error)
+        self.base_learner.reset()
+        self.base_learner.fit(self.memory)
+        if len(self.memory) > 1:
+            self.base_learner_is_fitted = True
+        return None
+    
+    def mean_absoulte_error(self, y_true, y_pred):
+        return np.mean(np.absolute(y_true - y_pred))

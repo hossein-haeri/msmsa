@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
+
 # %matplotlib qt
 import seaborn as sns
 from scipy.ndimage import gaussian_filter
@@ -19,16 +20,15 @@ from baselines_v2 import adwin_reg
 from baselines_v2 import kswin_reg 
 from baselines_v2 import ph_reg
 from baselines_v2 import naive_reg
-import msmsa_v2
+from baselines_v2 import aue_reg as aue
+import msmsa_v2 as msmsa
 # import msmsa_plus_v2
 import wandb
 import os
 
 
-
 def rescale(y, scaler):
     return scaler.inverse_transform(np.asarray(y).reshape(-1, 1))
-
 
 
 def run(model, online_model, dataset, dataset_configs):
@@ -144,13 +144,14 @@ for monte in tqdm(range(num_monte)):
                 dataset_configs['noise_var'] = noise_var
                 online_models = [
                             # msmsa_plus.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
+                            aue.AUE(min_memory_len=10, batch_size=100)
                             # msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
                             # davar_reg.DAVAR(lam=10),
-                            kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
-                            adwin_reg.ADWIN(delta=0.002),
-                            ddm_reg.DDM(alpha_w=2, alpha_d=3),
-                            ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),
-                            naive_reg.Naive()
+                            # kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
+                            # adwin_reg.ADWIN(delta=0.002),
+                            # ddm_reg.DDM(alpha_w=2, alpha_d=3),
+                            # ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),
+                            # naive_reg.Naive()
                             ]
                 for online_model in online_models:
                     online_model.base_learner = base_learner
@@ -172,7 +173,7 @@ for monte in tqdm(range(num_monte)):
 
     # pickle the logs every 10 monte sims
     if pickle_log and monte % 1 == 0:
-        with open('logs_msmsa_plus_test.pkl', 'wb') as f:
+        with open('test.pkl', 'wb') as f:
             pickle.dump(logs, f)
 
 

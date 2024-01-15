@@ -11,6 +11,8 @@ from scipy.ndimage import gaussian_filter
 class MSMSA:
 
     def __init__(self, lam=0.1, min_memory_len=10, update_freq_factor=1, num_anchors = 1000):
+        self.base_learner = None
+        self.base_learner_is_fitted = False
         self.t = 0
         self.num_candids = 50
         self.num_anchors = num_anchors
@@ -36,7 +38,6 @@ class MSMSA:
         self.max_indicator_memory = 2*max(self.hor_candids)
         self.indicators = np.empty(shape=(self.max_indicator_memory,self.num_candids,self.num_anchors))
         self.indicators[:] = np.nan
-        
         self.hyperparams = {'lam':lam,
                             'num_anchors': self.num_anchors,
                             'update_freq_factor': update_freq_factor,
@@ -48,14 +49,13 @@ class MSMSA:
             self.initialize_anchors()
             self.first_sample = False
 
-
         self.memory.append((X, y))
         if len(self.memory) > self.memory_size+1:
             self.memory[-self.memory_size:]
         self.t += 1
 
     def update_online_model(self, X, y):
-        
+        self.add_sample(X, y)
         if self.t > 1:
             for i, tau in enumerate(self.hor_candids):
                 update_period = max(1,int(tau/self.update_freq_factor))
@@ -63,11 +63,11 @@ class MSMSA:
                 if self.t%tau == 0 or self.update_freq_factor == -1:
                 
                     # train a new model using last tau samples and append it to the right side of the que
-                    model.reset()
-                    model.fit(self.memory[-tau:])
+                    self.base_learner.reset()
+                    self.base_learner.fit(self.memory[-tau:])
 
                     # calculate model indicators and store it
-                    current_indicators = self.get_model_indicators(model)
+                    current_indicators = self.get_model_indicators(self.base_learner)
                     
                     # self.indicators[self.t%self.max_indicator_memory, i, :] = current_indicators
                     
@@ -100,14 +100,14 @@ class MSMSA:
         if not all(np.isnan(v) for v in self.avars_scalarized): # check for warm start condition
             idx = self.index_of_minimum(self.avars_scalarized)
             self.validity_horizon = min(self.t, self.hor_candids[idx])
-            model.reset()
-            model.fit(self.memory[-self.validity_horizon:])
-            return model, self.validity_horizon
+            self.base_learner.reset()
+            self.base_learner.fit(self.memory[-self.validity_horizon:])
+            return None
         else: # means all values in avars are nan and hence we are in the cold start period
             self.validity_horizon = self.t
-            model.reset()
-            model.fit(self.memory[-self.validity_horizon:])
-            return model, self.validity_horizon
+            self.base_learner.reset()
+            self.base_learner.fit(self.memory[-self.validity_horizon:])
+            return None
 
     def get_allan_variance(self, params):
         params = np.array(params)
@@ -157,3 +157,7 @@ class MSMSA:
             if arr[i] == arr[adjusted_index]:
                 adjusted_index = i
         return adjusted_index
+    
+
+    def predict_online_model(self, X):
+        return self.base_learner.predict(X)
