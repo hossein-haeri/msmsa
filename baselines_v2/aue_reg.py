@@ -15,6 +15,7 @@ class AUE:
         self.epsilon = 0.0001
         self.k = 10
         self.max_num_models_in_pool = 15
+        self.mse_r = 0.5 # mse of a random predictor
         # self.change_flag = False
         # self.change_flag_history = []
         self.method_name = 'KSWIN'
@@ -22,8 +23,8 @@ class AUE:
         self.hyperparams = {
                     }
 
-    def add_sample(self, sample):
-        self.memory.append(sample)
+    def add_sample(self, X, y):
+        self.memory.append((X, y))
 
     # def detect(self, error):
     #     # self.add_element(error)
@@ -44,21 +45,27 @@ class AUE:
         self.memory = []
         self.change_flag = False
         self.change_flag_history = []
-        self.mse_r = 0.5 # mse of a random predictor
+        
 
     def cross_validation(self, model, memory):
-        return cross_val_score(model, memory, cv=5)
+        return cross_val_score(model.model, [sample[0] for sample in memory], [sample[1] for sample in memory], cv=5, scoring='neg_mean_squared_error').mean()
 
     def sort_models(self, models_pool):
         # sort the models in the pool based on their weights
         return models_pool.sort(key=lambda x: x.weight, reverse=True) 
 
-    def update_(self, model, error):
+    def update_online_model(self, X, y):
+
+        self.add_sample(X, y)
+
         if len(self.memory) > self.batch_size:
             
-            model_ = copy.copy(model)
+            model_ = copy.copy(self.base_learner)
             model_.reset()
             model_.fit(self.memory)
+            if len(self.memory) > 1:
+                self.base_learner_is_fitted = True
+
 
             # Calculate the MSE error via cross validation
             mse_ = self.cross_validation(model_, self.memory)
@@ -80,21 +87,21 @@ class AUE:
             self.memory = []
             self.sort_models(self.models_pool)
             self.models_pool = self.models_pool[0:self.max_num_models_in_pool]
-        # return model, len(self.memory)
-    
-    def update_online_model(self, X, y):
-        self.add_sample((X, y))
-        if self.base_learner_is_fitted:
-            y_hat = self.predict_online_model(X)
-        else:
-            y_hat = 0
-        error = self.mean_absoulte_error(y, y_hat)
-        self.detect_(error)
-        self.base_learner.reset()
-        self.base_learner.fit(self.memory)
-        if len(self.memory) > 1:
-            self.base_learner_is_fitted = True
         return None
+    
+    # def update_online_model(self, X, y):
+    #     self.add_sample((X, y))
+    #     if self.base_learner_is_fitted:
+    #         y_hat = self.predict_online_model(X)
+    #     else:
+    #         y_hat = 0
+    #     error = self.mean_absoulte_error(y, y_hat)
+    #     self.detect_(error)
+    #     self.base_learner.reset()
+    #     self.base_learner.fit(self.memory)
+    #     if len(self.memory) > 1:
+    #         self.base_learner_is_fitted = True
+    #     return None
     
     def mean_absoulte_error(self, y_true, y_pred):
         return np.mean(np.absolute(y_true - y_pred))
