@@ -6,7 +6,7 @@ from sklearn.model_selection import cross_val_score
 # from river.drift import KSWIN as KolmogorovSmirnovWIN
 
 class AUE:
-    def __init__(self, min_memory_len=10, batch_size=100):
+    def __init__(self, min_memory_len=10, batch_size=100, mse_r=0.1):
         self.base_learner_is_fitted = False
         self.base_learner = None
         self.memory = []
@@ -14,11 +14,11 @@ class AUE:
         self.batch_size = batch_size
         self.epsilon = 0.0001
         self.k = 10
-        self.max_num_models_in_pool = 15
-        self.mse_r = 0.5 # mse of a random predictor
+        self.max_num_models_in_pool = 20
+        self.mse_r = mse_r # mse of a random predictor
         # self.change_flag = False
         # self.change_flag_history = []
-        self.method_name = 'KSWIN'
+        self.method_name = 'AUE'
         self.min_memory_len = min_memory_len
         self.hyperparams = {
                     }
@@ -105,3 +105,14 @@ class AUE:
     
     def mean_absoulte_error(self, y_true, y_pred):
         return np.mean(np.absolute(y_true - y_pred))
+    
+    def predict_online_model(self, X):
+        # from self.models_pool predict the output of the ensemble
+        y_pred = 0
+        for model in self.models_pool:
+            y_pred += model.predict(X)
+        if len(self.models_pool) == 0:
+            return None
+        else:
+            return y_pred / len(self.models_pool)
+    

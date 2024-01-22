@@ -51,9 +51,11 @@ def run(model, online_model, dataset, dataset_configs):
     for k, (X, y) in enumerate(zip(data_X, data_y)):
         try:
             pred_y = online_model.predict_online_model(X)[0]
+            # print('predication succeeded')
         except:
             # if prediction fails, use the previous prediction
             pred_y = pred_y
+            # print('predication failed')
 
         # pred_y = float(pred_y)
         validation_mae = np.absolute(y - pred_y)
@@ -89,8 +91,8 @@ pickle_log = True
 
 datasets = [
             'Bike (daily)',
-            # 'Bike (hourly)',
-            # 'Household energy',
+            'Bike (hourly)',
+            'Household energy',
             # 'Melbourn housing',
             # 'Air quality',
             # 'Friction',
@@ -144,14 +146,14 @@ for monte in tqdm(range(num_monte)):
                 dataset_configs['noise_var'] = noise_var
                 online_models = [
                             # msmsa_plus.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
-                            aue.AUE(min_memory_len=10, batch_size=100)
-                            # msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
+                            aue.AUE(min_memory_len=10, batch_size=20),
+                            msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
                             # davar_reg.DAVAR(lam=10),
-                            # kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
-                            # adwin_reg.ADWIN(delta=0.002),
-                            # ddm_reg.DDM(alpha_w=2, alpha_d=3),
-                            # ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),
-                            # naive_reg.Naive()
+                            kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
+                            adwin_reg.ADWIN(delta=0.002),
+                            ddm_reg.DDM(alpha_w=2, alpha_d=3),
+                            ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),
+                            naive_reg.Naive()
                             ]
                 for online_model in online_models:
                     online_model.base_learner = base_learner
@@ -173,7 +175,7 @@ for monte in tqdm(range(num_monte)):
 
     # pickle the logs every 10 monte sims
     if pickle_log and monte % 1 == 0:
-        with open('test.pkl', 'wb') as f:
+        with open('test_.pkl', 'wb') as f:
             pickle.dump(logs, f)
 
 
