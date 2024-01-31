@@ -48,7 +48,7 @@ class AUE:
         
 
     def cross_validation(self, model, memory):
-        return cross_val_score(model.model, [sample[0] for sample in memory], [sample[1] for sample in memory], cv=5, scoring='neg_mean_squared_error').mean()
+        return -cross_val_score(model.model, [sample[0] for sample in memory], [sample[1] for sample in memory], cv=5, scoring='neg_mean_squared_error').mean()
 
     def sort_models(self, models_pool):
         # sort the models in the pool based on their weights
@@ -66,7 +66,6 @@ class AUE:
             if len(self.memory) > 1:
                 self.base_learner_is_fitted = True
 
-
             # Calculate the MSE error via cross validation
             mse_ = self.cross_validation(model_, self.memory)
             model_.weight = 1 / (mse_ + self.epsilon)
@@ -74,7 +73,8 @@ class AUE:
             for mdl in self.models_pool:
                 mse = self.cross_validation(mdl, self.memory)
                 mdl.weight = 1 / (mse + self.epsilon)
-            
+                # print(mdl.weight)
+            # print('\n')
             self.sort_models(self.models_pool)
             top_k_models = self.models_pool[:self.k]
             top_k_models.append(model_)
