@@ -90,14 +90,14 @@ wandb_logrun = False
 pickle_log = True
 
 datasets = [
-            'Bike (daily)',
-            'Bike (hourly)',
-            'Household energy',
+            # 'Bike (daily)',
+            # 'Bike (hourly)',
+            # 'Household energy',
             # 'Melbourn housing',
             # 'Air quality',
             # 'Friction',
             # 'NYC taxi',
-            # 'Teconer'
+            'Teconer'
                 ]
 
 # datasets = ['Hyper-A',
@@ -128,7 +128,7 @@ dataset_configs = {'noise_var':     None,
 # # model = learning_models.SVReg()
 # # model = learning_models.Polynomial()
 base_learners = [
-            # learning_models.Linear(),
+            learning_models.Linear(),
             learning_models.DecissionTree(),
             # learning_models.SVReg()
         ]
@@ -146,7 +146,7 @@ for monte in tqdm(range(num_monte)):
                 dataset_configs['noise_var'] = noise_var
                 online_models = [
                             # msmsa_plus.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
-                            aue.AUE(min_memory_len=10, batch_size=20),
+                            # aue.AUE(min_memory_len=10, batch_size=20),
                             msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
                             # davar_reg.DAVAR(lam=10),
                             kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),

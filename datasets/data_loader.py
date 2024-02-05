@@ -7,18 +7,23 @@ from sklearn.preprocessing import MinMaxScaler
 def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_var=0.2, drift_probability=0.05):
 
 
+    # if dataset_name == 'Teconer':
+    #     # check if the dataset is already downloaded if not download it
+    #     if not os.path.exists('datasets/Teconer.csv'):
+    #         print('Downloading Teconer dataset...')
+    #         os.system('wget https://drive.google.com/file/d/1uEMMEfowbi5m8I2zBay4o7x53eClTE5B/view?usp=drive_link -P datasets/')
+    #     # read the dataset
+    #     df = pd.read_csv('datasets/Teconer.csv', usecols = ['Date', 'Time', 'Latitude', 'Longitude', 'Friction', 'Tsurf', 'Ta', 'SensorName', 'VehicleID', 'Speed']).dropna()
+    #     # sort the df by date and time
+    #     df['Date'] = pd.to_datetime(df['Date'])
+    #     df['Time'] = pd.to_datetime(df['Time'])
+    #     df = df.sort_values(by=['Date', 'Time'])
+    #     data_X = df[['Latitude', 'Longitude','Tsurf', 'Ta']].to_numpy()
+    #     data_y = df['Friction'].to_numpy()
+
     if dataset_name == 'Teconer':
-        # check if the dataset is already downloaded if not download it
-        if not os.path.exists('datasets/Teconer.csv'):
-            print('Downloading Teconer dataset...')
-            os.system('wget https://drive.google.com/file/d/1uEMMEfowbi5m8I2zBay4o7x53eClTE5B/view?usp=drive_link -P datasets/')
-        # read the dataset
-        df = pd.read_csv('datasets/Teconer.csv', usecols = ['Date', 'Time', 'Latitude', 'Longitude', 'Friction', 'Tsurf', 'Ta', 'SensorName', 'VehicleID', 'Speed']).dropna()
-        # sort the df by date and time
-        df['Date'] = pd.to_datetime(df['Date'])
-        df['Time'] = pd.to_datetime(df['Time'])
-        df = df.sort_values(by=['Date', 'Time'])
-        data_X = df[['Latitude', 'Longitude','Tsurf', 'Ta']].to_numpy()
+        df = pd.read_csv('datasets/Teconer_2018_Jan_light_100K.csv').dropna()
+        data_X = df[['Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy()
         data_y = df['Friction'].to_numpy()
 
     if dataset_name == 'NYC taxi':
