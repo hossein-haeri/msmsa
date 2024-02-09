@@ -91,6 +91,8 @@ class DDM:
     def get_recent_data(self):
         return self.memory
 
+    def get_val_horizon(self):
+        return len(self.memory)
 
     def update_(self, model, error):
         self.detect(error)

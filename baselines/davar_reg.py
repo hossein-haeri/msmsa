@@ -120,6 +120,9 @@ class DAVAR:
             avar.append( ((params[i,:] - params[i+1, :])**2).mean() )
         return np.mean(avar)
     
+    def get_val_horizon(self):
+        return len(self.validity_horizon)
+
 
     def filter_values(self, w):
         # print(self.avars)

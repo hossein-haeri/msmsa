@@ -48,6 +48,7 @@ def run(model, online_model, dataset, dataset_configs):
     validation_mae_list = []
     y_pred_list = []
     y_list = []
+    val_horizon_list = []
     for k, (X, y) in enumerate(zip(data_X, data_y)):
         try:
             pred_y = online_model.predict_online_model(X)[0]
@@ -64,6 +65,7 @@ def run(model, online_model, dataset, dataset_configs):
         validation_mae_list.append(validation_mae)
         y_pred_list.append(pred_y)
         y_list.append(y)
+        val_horizon_list = online_model.get_val_horizon()
 
     y_rescaled = rescale(y_list, scaler_y)
     pred_y_rescaled = rescale(y_pred_list, scaler_y)
@@ -75,6 +77,7 @@ def run(model, online_model, dataset, dataset_configs):
                     'method': online_model.method_name,
                     'learning_model': type(model.model).__name__,
                     'MAE': np.mean(np.absolute(y_rescaled - pred_y_rescaled)),
+                    'memory_len': np.mean(val_horizon_list),
                     # 'noise_var': dataset_configs['noise_var'],
                     # 'STD': np.std(update_info_list),
                     # 'RMSE': np.sqrt(np.mean(update_info_list**2)),
@@ -97,7 +100,8 @@ datasets = [
             # 'Air quality',
             # 'Friction',
             # 'NYC taxi',
-            'Teconer'
+            # 'Teconer',
+            'Metro'
                 ]
 
 # datasets = ['Hyper-A',
@@ -175,7 +179,8 @@ for monte in tqdm(range(num_monte)):
 
     # pickle the logs every 10 monte sims
     if pickle_log and monte % 1 == 0:
-        with open('test_.pkl', 'wb') as f:
+        # with open('teconer_100K.pkl', 'wb') as f:
+        with open('metro.pkl', 'wb') as f:
             pickle.dump(logs, f)
 
 

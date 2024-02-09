@@ -39,6 +39,9 @@ class PH(PageHinkley):
     def get_recent_data(self):
         return self.memory
 
+
+    def get_val_horizon(self):
+        return len(self.memory)
     def reset_detector(self):
         self.reset()
         self.memory = []
