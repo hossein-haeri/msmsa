@@ -123,6 +123,8 @@ class MSMSA:
             avar.append( ((params[i,:] - params[i+1, :])**2).mean() )
         return np.mean(avar)
     
+    def get_val_horizon(self):
+        return self.validity_horizon
 
     def replace_nan_with_max(self, x):
         if np.isnan(x).all():

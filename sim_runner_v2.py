@@ -53,6 +53,7 @@ def run(model, online_model, dataset, dataset_configs):
     validation_mae_list = []
     y_pred_list = []
     y_list = []
+    val_horizon_list = []
     validity_horizon_list = []
     # error_list = []
     for k, (X, y) in enumerate(tqdm(zip(data_X, data_y))):
