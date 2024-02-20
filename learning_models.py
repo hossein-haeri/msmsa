@@ -7,7 +7,7 @@ from sklearn.linear_model import Ridge
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import SVR
-
+from sklearn.neural_network import MLPRegressor
 
 class MovMean:
     def __init__(self):
@@ -200,6 +200,54 @@ class Polynomial:
         self.y_pred_history = []
         self.error_history = []
 
+
+
+
+class NeuralNet:
+    def __init__(self, n_hidden_layers=2, n_neurons_per_layer=50, activation='relu', solver='adam', alpha=0.001, max_iter=20):
+        self.n_hidden_layers = n_hidden_layers
+        self.n_neurons_per_layer = n_neurons_per_layer
+        self.hidden_layer_sizes = (n_neurons_per_layer,) * n_hidden_layers  # Creates a tuple with a specified number of neurons per layer, repeated for the number of layers
+        self.activation = activation
+        self.solver = solver
+        self.alpha = alpha
+        self.max_iter = max_iter
+        self.model = MLPRegressor(hidden_layer_sizes=self.hidden_layer_sizes, 
+                                  activation=self.activation, 
+                                  solver=self.solver, 
+                                  alpha=self.alpha, 
+                                  max_iter=self.max_iter)
+        self.y_pred_history = []
+        self.error_history = []
+        # suppress warnings about convergence
+        import warnings
+        from sklearn.exceptions import ConvergenceWarning
+        warnings.filterwarnings("ignore", category=ConvergenceWarning)
+
+
+    def fit(self, train_data):
+        X = [sample[0] for sample in train_data]
+        y = [sample[1] for sample in train_data]
+        if len(train_data) > 1:
+            self.model.fit(X, y)
+        else:
+            pass
+
+    def predict(self, X):
+        pred = self.model.predict([X])
+        # self.y_pred_history.append(pred)
+        return pred
+
+    def get_parameters(self):
+        parameters = {
+            'coefs_': self.model.coefs_,
+            'intercepts_': self.model.intercepts_
+        }
+        return parameters
+    
+    def reset(self):
+        self.__init__(n_hidden_layers=self.n_hidden_layers, n_neurons_per_layer=self.n_neurons_per_layer,
+                      activation=self.activation, solver=self.solver, alpha=self.alpha, max_iter=self.max_iter)
 
 # if __name__ == '__main__':
 #     model = Linear()

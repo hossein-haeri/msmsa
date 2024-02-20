@@ -42,13 +42,13 @@ class MSMSA:
                             'update_freq_factor': update_freq_factor,
                             }
 
-    def add_sample(self,sample):
+    def add_sample(self,X, y):
         if self.first_sample:
-            self.num_features = sample[0].shape[0]
+            self.num_features = X.shape[0]
             self.initialize_anchors()
             self.first_sample = False
 
-        self.memory.append(sample)
+        self.memory.append((X, y))
         if len(self.memory) > self.memory_size+1:
             self.memory[-self.memory_size:]
         self.t += 1

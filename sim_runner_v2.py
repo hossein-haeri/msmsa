@@ -11,7 +11,7 @@ import seaborn as sns
 from scipy.ndimage import gaussian_filter
 
 
-import stream_generator
+# import stream_generator
 import learning_models
 from datasets.data_loader import load_dataset
 from baselines_v2 import davar_reg
@@ -22,7 +22,8 @@ from baselines_v2 import ph_reg
 from baselines_v2 import naive_reg
 from baselines_v2 import aue_reg as aue
 import msmsa_v2 as msmsa
-# import msmsa_plus_v2
+import msmsa_plus_v2 as msmsa_plus
+import neural_net_base_learner
 import wandb
 import os
 
@@ -33,12 +34,16 @@ def rescale(y, scaler):
 
 def run(model, online_model, dataset, dataset_configs):
         
-    data_X, data_y, scaler_y = load_dataset(dataset,
+    data_X, data_y, scaler_X, scaler_y = load_dataset(dataset,
                                                 hyperplane_dimension=dataset_configs['dim'],
                                                 noise_var=dataset_configs['noise_var'],
                                                 stream_size=dataset_configs['stream_size'],
                                                 drift_probability=dataset_configs['drift_prob'])
     
+
+    if dataset == 'Teconer_10K' or dataset == 'Teconer_100K' or dataset == 'Teconer_1M' or dataset == 'Teconer_full':
+        online_model.anchor_samples = data_X
+
     # results = np.zeros([len(data_X),4])
     # valid_model = None
     # y = 0
@@ -48,7 +53,9 @@ def run(model, online_model, dataset, dataset_configs):
     validation_mae_list = []
     y_pred_list = []
     y_list = []
-    for k, (X, y) in enumerate(zip(data_X, data_y)):
+    validity_horizon_list = []
+    # error_list = []
+    for k, (X, y) in enumerate(tqdm(zip(data_X, data_y))):
         try:
             pred_y = online_model.predict_online_model(X)[0]
             # print('predication succeeded')
@@ -64,31 +71,43 @@ def run(model, online_model, dataset, dataset_configs):
         validation_mae_list.append(validation_mae)
         y_pred_list.append(pred_y)
         y_list.append(y)
+        # error_list.append(np.absolute(y - pred_y))
+
+        # validity_horizon_list.append(len(online_model.memory))
+        validity_horizon_list.append(online_model.validity_horizon)
 
     y_rescaled = rescale(y_list, scaler_y)
     pred_y_rescaled = rescale(y_pred_list, scaler_y)
+    error_list = np.absolute(y_rescaled - pred_y_rescaled)
     # mae_inv = np.absolute(y_inv - pred_y_inv)
     # y_bar_inv = np.mean(y_inv)
 
+    
     run_summary = { 'dataset': dataset,
                     'stream_size': len(data_y),
                     'method': online_model.method_name,
                     'learning_model': type(model.model).__name__,
-                    'MAE': np.mean(np.absolute(y_rescaled - pred_y_rescaled)),
+                    'MAE': np.mean(error_list),
                     # 'noise_var': dataset_configs['noise_var'],
                     # 'STD': np.std(update_info_list),
                     # 'RMSE': np.sqrt(np.mean(update_info_list**2)),
                     # 'RRSE': np.sqrt(np.sum(update_info_list**2)/np.sum((data_y - np.mean(data_y))**2)),
                     'TargetMean': np.mean(y_rescaled),
                     'TargetSTD': np.std(y_rescaled),
+                    # 'Error': error_list,
+                    # 'Predictions': pred_y_rescaled,
                     # 'MeanValidityHorizon': np.mean(update_info_list),
                 }
-    return run_summary
+    # if dataset == 'Teconer':
+    #     return run_summary, pred_y_rescaled
+    return run_summary, pred_y_rescaled, validity_horizon_list
 
 wandb_log = False
 wandb_logrun = False
 pickle_log = True
 
+
+################# REAL DATA #################
 datasets = [
             # 'Bike (daily)',
             # 'Bike (hourly)',
@@ -97,9 +116,16 @@ datasets = [
             # 'Air quality',
             # 'Friction',
             # 'NYC taxi',
-            'Teconer'
+            'Teconer_10K'
                 ]
+dataset_configs = {'noise_var':     None,
+                   'stream_size':   None,
+                   'drift_prob':    None,
+                   'dim':           None}
+noise_vars = ['-1']
 
+
+################# SYNTHETIC DATA #################
 # datasets = ['Hyper-A',
 #             'Hyper-I',
 #             'Hyper-G',
@@ -108,16 +134,12 @@ datasets = [
 #             'Hyper-GU'
 #                ]
 
-
-# dataset_configs = {'noise_var': 0,
+# dataset_configs = {'noise_var': None,
 #                    'stream_size': 1_000,
 #                    'drift_prob':0.01,
 #                    'dim': 10}
+# noise_vars = [.1]
 
-dataset_configs = {'noise_var':     None,
-                   'stream_size':   None,
-                   'drift_prob':    None,
-                   'dim':           None}
 
 # datasets = ['Household energy']
 # dataset_name = datasets[1]
@@ -127,14 +149,18 @@ dataset_configs = {'noise_var':     None,
 # # model = learning_models.KNN()
 # # model = learning_models.SVReg()
 # # model = learning_models.Polynomial()
+
 base_learners = [
-            learning_models.Linear(),
+            # learning_models.Linear(),
             learning_models.DecissionTree(),
-            # learning_models.SVReg()
+            # learning_models.SVReg(),
+            # learning_models.NeuralNet()
+            neural_net_base_learner.DNNRegressor()
         ]
 
 # noise_vars = [0, 1, 2, 3, 4, 5]
-noise_vars = ['-1']
+
+
 num_monte = 1
 
 logs = pd.DataFrame()
@@ -145,26 +171,28 @@ for monte in tqdm(range(num_monte)):
             for noise_var in tqdm(noise_vars, leave=False):
                 dataset_configs['noise_var'] = noise_var
                 online_models = [
-                            # msmsa_plus.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
+                            # msmsa_plus.MSMSA_plus(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=500),
                             # aue.AUE(min_memory_len=10, batch_size=20),
                             msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
                             # davar_reg.DAVAR(lam=10),
-                            kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
-                            adwin_reg.ADWIN(delta=0.002),
-                            ddm_reg.DDM(alpha_w=2, alpha_d=3),
-                            ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),
-                            naive_reg.Naive()
+                            # kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
+                            # adwin_reg.ADWIN(delta=0.002),
+                            # ddm_reg.DDM(alpha_w=2, alpha_d=3),
+                            # ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),
+                            # naive_reg.Naive()
                             ]
                 for online_model in online_models:
                     online_model.base_learner = base_learner
 
                 for online_model in tqdm(online_models, leave=False):
-                    run_summary = run(    
+                    (run_summary, predictions, val_horizon) = run(    
                             online_model=online_model,
                             dataset=dataset,
                             model=base_learner,
                             dataset_configs=dataset_configs,
                             )
+                    # print run_summary fields of interest
+                    # print('Method:', run_summary['method'], 'MAE:', run_summary['MAE'])
                     print(run_summary)
                     # use pd concat to append run_summary to logs
                     logs = pd.concat([logs, pd.DataFrame([run_summary])], ignore_index=True)
@@ -173,10 +201,14 @@ for monte in tqdm(range(num_monte)):
                         wandb.log(run_summary)
                         wandb.finish(quiet=True)
 
-    # pickle the logs every 10 monte sims
-    if pickle_log and monte % 1 == 0:
-        with open('test_.pkl', 'wb') as f:
-            pickle.dump(logs, f)
+# pickle the logs every 10 monte sims
+if pickle_log:
+    with open(dataset+'_run_summary.pkl', 'wb') as f:
+        pickle.dump(logs, f)
+    with open(dataset+'_predictions.pkl', 'wb') as f:
+        pickle.dump(predictions, f)
+    with open(dataset+'_val_horizon.pkl', 'wb') as f:
+        pickle.dump(val_horizon, f)
 
 
     

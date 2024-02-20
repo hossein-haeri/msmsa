@@ -8,33 +8,31 @@ import sys
 from scipy.ndimage import gaussian_filter
 
 
-class MSMSA:
+class MSMSA_plus:
 
-    def __init__(self, lam=0.1, min_memory_len=10, update_freq_factor=1, num_anchors = 1000, max_horizon=50000):
-        self.max_horizon = max_horizon
+    def __init__(self, anchor_samples=None, lam=0.1, min_memory_len=10, update_freq_factor=1, num_anchors = 100, max_horizon=1000):
+        self.anchor_samples = anchor_samples
         self.base_learner = None
         self.base_learner_is_fitted = False
         self.t = 0
-        self.num_candids = 50
+        self.num_candids = 100
         self.num_anchors = num_anchors
-        self.hor_candids = list(np.unique([max(int(1.15**j), min_memory_len) for j in range(1, self.num_candids+1)]))
-
-        # drop all horizons that are greater than max_horizon
-        self.hor_candids = [i for i in self.hor_candids if i <= max_horizon]
-        # self.hor_candids = self.hor_candids[self.hor_candids <= max_horizon]
-        # print(self.hor_candids)
+        self.hor_candids = np.unique([max(int(1.15**j), min_memory_len) for j in range(1, self.num_candids+1)])
         # self.hor_candids = np.unique([max(int(2**(j)), min_memory_len) for j in range(1, self.num_candids+1)])
+        # drop horizon candidates that are greater than max_horizon
+        self.hor_candids = self.hor_candids[self.hor_candids <= max_horizon]
+        # print(self.hor_candids)
         # self.num_candids = 500
         # self.hor_candids = range(min_memory_len,self.num_candids)
         # print(self.hor_candids)
         self.num_candids = len(self.hor_candids)
-        self.validity_horizon = 1
-        self.validity_horizon_index = 0
+        self.validity_horizon = np.ones(self.num_anchors, dtype=int)
         self.memory_size = np.max(self.hor_candids)
         self.errors = []
         self.memory = []
         self.models = [[]]*self.num_candids
-        self.method_name = 'MSMSA'
+        self.models_ = [[]]*self.num_anchors
+        self.method_name = 'MSMSA+'
         self.anchors = None
         self.first_sample = True
         self.num_features = None
@@ -72,6 +70,7 @@ class MSMSA:
                     # train a new model using last tau samples and append it to the right side of the que
                     self.base_learner.reset()
                     self.base_learner.fit(self.memory[-tau:])
+                    self.models[i] = self.base_learner
 
                     # calculate model indicators and store it
                     current_indicators = self.get_model_indicators(self.base_learner)
@@ -97,22 +96,29 @@ class MSMSA:
 
                     self.indicators[0, i, :] = current_indicators
 
-        # average between all anchor points
-        self.avars_scalarized = np.mean(self.avars, axis=1)
+                    
 
-        # find the minimum and the validity horizon
-        if not all(np.isnan(v) for v in self.avars_scalarized): # check for warm start condition
-            idx = self.index_of_minimum(self.avars_scalarized)
-            self.validity_horizon_index = idx
-            self.validity_horizon = min(self.t, self.hor_candids[idx])
-            # self.base_learner.reset()
-            # self.base_learner.fit(self.memory[-self.validity_horizon:])
-            return None
-        else: # means all values in avars are nan and hence we are in the cold start period
-            self.validity_horizon = self.t
-            # self.base_learner.reset()
-            # self.base_learner.fit(self.memory[-self.validity_horizon:])
-            return None
+
+        for k in range(self.num_anchors):
+            # find the minimum and the validity horizon
+            if not all(np.isnan(v) for v in self.avars[:,k]): # check for warm start condition
+                idx = self.index_of_minimum(self.avars[:,k])
+                # print('\n PRINT------------',self.validity_horizon)
+
+                self.validity_horizon[k] = min(self.t, self.hor_candids[idx])
+                # self.base_learner.reset()
+                # self.base_learner.fit(self.memory[-self.validity_horizon[k]:])
+                # self.models_[k] = self.base_learner
+                # return model, self.validity_horizon[k]
+            else: # means all values in avars are nan and hence we are in the cold start period
+                self.validity_horizon[k] = self.t
+                # self.base_learner.reset()
+                # self.base_learner.fit(self.memory[-self.validity_horizon[k]:])
+                # self.models_[k] = self.base_learner
+            # self.models[k] = self.base_learner
+        return None
+
+    
 
     def get_allan_variance(self, params):
         params = np.array(params)
@@ -147,7 +153,17 @@ class MSMSA:
 
     def initialize_anchors(self):
         # self.anchors = np.random.uniform(low=-1, high=1, size=(self.num_anchors, self.num_features))
-        self.anchors = np.random.normal(0, scale=1, size=(self.num_anchors, self.num_features))
+        if self.anchor_samples is not None:
+            # sample the anchor points from the anchor_samples wihtout replacement if number of anchor points is less than the number of samples
+            if self.num_anchors < self.anchor_samples.shape[0]:
+                idx = np.random.choice(self.anchor_samples.shape[0], self.num_anchors, replace=False)
+                self.anchors = self.anchor_samples[idx]
+            else:
+                self.anchors = self.anchor_samples
+        else:
+            self.anchors = np.random.normal(0, scale=1, size=(self.num_anchors, self.num_features))
+
+        # sample 
 
 
     def index_of_minimum(self, arr): # written by chat-GPT!
@@ -165,4 +181,15 @@ class MSMSA:
     
 
     def predict_online_model(self, X):
-        return self.base_learner.predict(X)
+        # check and see which anchor point is closest to the input X size=(self.num_features)
+        # calculate the distance between X and all anchor points
+        dists = np.linalg.norm(self.anchors - X, axis=1)
+        # find the index of the anchor point that is closest to X
+        idx = np.argmin(dists)
+        # identify the the validity horizon of the closest anchor point
+        validity_horizon = self.validity_horizon[idx]
+
+        # return self.model_[idx].predict(X)
+        return self.model[idx].predict(X), validity_horizon
+    
+        
