@@ -17,12 +17,13 @@ class MSMSA:
         self.t = 0
         self.num_candids = 50
         self.num_anchors = num_anchors
-        self.hor_candids = list(np.unique([max(int(1.15**j), min_memory_len) for j in range(1, self.num_candids+1)]))
-
+        # self.hor_candids = list(np.unique([max(int(1.15**j), min_memory_len) for j in range(1, self.num_candids+1)]))
+        self.hor_candids = list(np.unique([max(int(1.2**j), min_memory_len) for j in range(1, self.num_candids+1)]))
+        
         # drop all horizons that are greater than max_horizon
         self.hor_candids = [i for i in self.hor_candids if i <= max_horizon]
         # self.hor_candids = self.hor_candids[self.hor_candids <= max_horizon]
-        # print(self.hor_candids)
+        print(self.hor_candids)
         # self.hor_candids = np.unique([max(int(2**(j)), min_memory_len) for j in range(1, self.num_candids+1)])
         # self.num_candids = 500
         # self.hor_candids = range(min_memory_len,self.num_candids)
@@ -72,7 +73,7 @@ class MSMSA:
                     # train a new model using last tau samples and append it to the right side of the que
                     self.base_learner.reset()
                     self.base_learner.fit(self.memory[-tau:])
-
+                    self.models[i] = self.base_learner
                     # calculate model indicators and store it
                     current_indicators = self.get_model_indicators(self.base_learner)
                     
@@ -104,14 +105,20 @@ class MSMSA:
         if not all(np.isnan(v) for v in self.avars_scalarized): # check for warm start condition
             idx = self.index_of_minimum(self.avars_scalarized)
             self.validity_horizon_index = idx
-            self.validity_horizon = min(self.t, self.hor_candids[idx])
+            # self.validity_horizon = min(self.t, self.hor_candids[idx])
+            self.validity_horizon = self.hor_candids[idx]
+            if self.validity_horizon > self.t:
+                print('validity horizon is greater than t')
+                # self.validity_horizon = self.t
+            self.base_learner = self.models[idx]
             # self.base_learner.reset()
             # self.base_learner.fit(self.memory[-self.validity_horizon:])
             return None
         else: # means all values in avars are nan and hence we are in the cold start period
             self.validity_horizon = self.t
-            # self.base_learner.reset()
-            # self.base_learner.fit(self.memory[-self.validity_horizon:])
+            
+            self.base_learner.reset()
+            self.base_learner.fit(self.memory[-self.validity_horizon:])
             return None
 
     def get_allan_variance(self, params):

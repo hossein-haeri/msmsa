@@ -41,7 +41,7 @@ def run(model, online_model, dataset, dataset_configs):
                                                 drift_probability=dataset_configs['drift_prob'])
     
 
-    if dataset == 'Teconer_10K' or dataset == 'Teconer_100K' or dataset == 'Teconer_1M' or dataset == 'Teconer_full':
+    if 'Teconer_' in dataset:
         online_model.anchor_samples = data_X
 
     # results = np.zeros([len(data_X),4])
@@ -78,6 +78,7 @@ def run(model, online_model, dataset, dataset_configs):
         validity_horizon_list.append(online_model.validity_horizon)
 
     y_rescaled = rescale(y_list, scaler_y)
+    # y_rescaled = y_list
     pred_y_rescaled = rescale(y_pred_list, scaler_y)
     error_list = np.absolute(y_rescaled - pred_y_rescaled)
     # mae_inv = np.absolute(y_inv - pred_y_inv)
@@ -110,7 +111,7 @@ pickle_log = True
 
 ################# REAL DATA #################
 datasets = [
-            # 'Bike (daily)',
+            'Bike (daily)',
             # 'Bike (hourly)',
             # 'Household energy',
             # 'Melbourn housing',
@@ -156,7 +157,7 @@ base_learners = [
             learning_models.DecissionTree(),
             # learning_models.SVReg(),
             # learning_models.NeuralNet()
-            neural_net_base_learner.DNNRegressor()
+            # neural_net_base_learner.DNNRegressor()
         ]
 
 # noise_vars = [0, 1, 2, 3, 4, 5]
@@ -176,7 +177,7 @@ for monte in tqdm(range(num_monte)):
                             # aue.AUE(min_memory_len=10, batch_size=20),
                             msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
                             # davar_reg.DAVAR(lam=10),
-                            # kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
+                            kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
                             # adwin_reg.ADWIN(delta=0.002),
                             # ddm_reg.DDM(alpha_w=2, alpha_d=3),
                             # ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),
@@ -203,13 +204,19 @@ for monte in tqdm(range(num_monte)):
                         wandb.finish(quiet=True)
 
 # pickle the logs every 10 monte sims
-if pickle_log:
-    with open(dataset+'_run_summary.pkl', 'wb') as f:
-        pickle.dump(logs, f)
-    with open(dataset+'_predictions.pkl', 'wb') as f:
-        pickle.dump(predictions, f)
-    with open(dataset+'_val_horizon.pkl', 'wb') as f:
-        pickle.dump(val_horizon, f)
+# if pickle_log:
+#     with open(dataset+'_run_summary.pkl', 'wb') as f:
+#         pickle.dump(logs, f)
+#     with open(dataset+'_predictions.pkl', 'wb') as f:
+#         pickle.dump(predictions, f)
+#     with open(dataset+'_val_horizon.pkl', 'wb') as f:
+#         pickle.dump(val_horizon, f)
+
+
+# plot MAE for every method and every dataset on sns barplot
+sns.set_theme(style="whitegrid")
+ax = sns.barplot(x="method", y="MAE", data=logs, hue="dataset", ci="sd")
+plt.show()
 
 
     
