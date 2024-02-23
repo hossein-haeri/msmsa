@@ -6,7 +6,7 @@ import stream_generator
 
 # dataset_name = datasets[0]
 def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_var=0.2, drift_probability=0.05):
-
+    trip_ids = None
 
     # if dataset_name == 'Teconer':
     #     # check if the dataset is already downloaded if not download it
@@ -26,7 +26,9 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
         df = pd.read_csv('datasets/Teconer_2018_Jan_light_10K.csv').dropna()
         # pickle the df 
         df.to_pickle(dataset_name+'_records.pkl')
+        print(df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].head())
         data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy()
+        trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
 
     if dataset_name == 'Teconer_100K':
@@ -34,6 +36,7 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
         # pickle the df 
         df.to_pickle(dataset_name+'_records.pkl')
         data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy()
+        trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
 
     if dataset_name == 'Teconer_1M':
@@ -41,6 +44,7 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
         # pickle the df 
         df.to_pickle(dataset_name+'_records.pkl')
         data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy()
+        trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
 
     if dataset_name == 'Teconer_full':
@@ -48,6 +52,7 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
         # pickle the df 
         df.to_pickle(dataset_name+'_records.pkl')
         data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy()
+        trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
 
     if dataset_name == 'NYC taxi':
@@ -141,4 +146,4 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
     data_X = scaler_X.fit_transform(data_X)
     scaler_y = StandardScaler()
     data_y = scaler_y.fit_transform(data_y.reshape(-1, 1)).squeeze()
-    return data_X, data_y, scaler_X, scaler_y
+    return data_X, data_y, scaler_X, scaler_y, trip_ids

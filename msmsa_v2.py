@@ -176,10 +176,15 @@ class MSMSA:
     
 
     def predict_online_model(self, X):
-        if self.continuous_model_fit:
+        try:
+            print('predict_online_model...')
+            if self.continuous_model_fit:
+                self.base_learner.reset()
+                self.base_learner.fit(self.memory[-self.validity_horizon:])
+                return self.base_learner.predict(X)
+            else:
+                return self.models[self.validity_horizon_index].predict(X)
+        except:
             self.base_learner.reset()
-            self.base_learner.fit(self.memory[-self.validity_horizon:])
-            return self.base_learner.predict(X)
-        else:
-            return self.models[self.validity_horizon_index].predict(X)
+            self.base_learner.fit(self.memory)
         # return self.base_learner.predict(X)

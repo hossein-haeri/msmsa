@@ -85,8 +85,13 @@ class DecissionTree:
             pass
 
     def predict(self, X):
-        pred = self.model.predict([X])
-        self.y_pred_history.append(pred)
+        # if X is a single feature vector
+        if len(X.shape) == 1:
+            pred = self.model.predict([X])
+        # if X is a batch of feature vectors
+        else:
+            pred = self.model.predict(X)
+        # self.y_pred_history.append(pred)
         return pred
 
     def get_parameters(self):
