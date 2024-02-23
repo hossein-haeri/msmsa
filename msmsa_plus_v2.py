@@ -10,7 +10,8 @@ from scipy.ndimage import gaussian_filter
 
 class MSMSA_plus:
 
-    def __init__(self, anchor_samples=None, lam=0.1, min_memory_len=10, update_freq_factor=1, num_anchors = 100, max_horizon=1000):
+    def __init__(self, anchor_samples=None, lam=0.1, min_memory_len=10, update_freq_factor=1, num_anchors = 100, max_horizon=1000, continuous_model_fit=True):
+        self.continuous_model_fit = continuous_model_fit    
         self.anchor_samples = anchor_samples
         self.base_learner = None
         self.base_learner_is_fitted = False
@@ -27,11 +28,12 @@ class MSMSA_plus:
         # print(self.hor_candids)
         self.num_candids = len(self.hor_candids)
         self.validity_horizon = np.ones(self.num_anchors, dtype=int)
+        self.validity_horizon_indexes = np.ones(self.num_anchors, dtype=int)
         self.memory_size = np.max(self.hor_candids)
         self.errors = []
         self.memory = []
         self.models = [[]]*self.num_candids
-        self.models_ = [[]]*self.num_anchors
+        # self.models_ = [[]]*self.num_anchors
         self.method_name = 'MSMSA+'
         self.anchors = None
         self.first_sample = True
@@ -74,21 +76,14 @@ class MSMSA_plus:
 
                     # calculate model indicators and store it
                     current_indicators = self.get_model_indicators(self.base_learner)
-                    
-                    # self.indicators[self.t%self.max_indicator_memory, i, :] = current_indicators
-                    
-
+            
                     # recall model indicators calculated tau timestep before
                     if self.update_freq_factor == -1:
                         previous_indicators = self.indicators[(self.t%self.max_indicator_memory)-tau, i, :]
                     else:
-                        # print(self.indicators[(self.t%self.max_indicator_memory), i, :])
                         previous_indicators = self.indicators[(self.t%self.max_indicator_memory)-1, i, :]
                     
                     previous_indicators = self.indicators[0, i, :]
-                    # print('current_indicators: ',current_indicators[:10])
-                    # print('previous_indicators: ',previous_indicators[:10])
-
                     if not np.isnan(self.avars[i,0]):
                         self.avars[i,:] = (1-self.lam) * self.avars[i,:] + self.lam  * (current_indicators - previous_indicators)**2
                     else:
@@ -104,18 +99,11 @@ class MSMSA_plus:
             if not all(np.isnan(v) for v in self.avars[:,k]): # check for warm start condition
                 idx = self.index_of_minimum(self.avars[:,k])
                 # print('\n PRINT------------',self.validity_horizon)
-
                 self.validity_horizon[k] = min(self.t, self.hor_candids[idx])
-                # self.base_learner.reset()
-                # self.base_learner.fit(self.memory[-self.validity_horizon[k]:])
-                # self.models_[k] = self.base_learner
-                # return model, self.validity_horizon[k]
+                self.validity_horizon[k] = self.hor_candids[idx]
+                self.validity_horizon_indexes[k] = idx
             else: # means all values in avars are nan and hence we are in the cold start period
                 self.validity_horizon[k] = self.t
-                # self.base_learner.reset()
-                # self.base_learner.fit(self.memory[-self.validity_horizon[k]:])
-                # self.models_[k] = self.base_learner
-            # self.models[k] = self.base_learner
         return None
 
     
@@ -188,8 +176,13 @@ class MSMSA_plus:
         idx = np.argmin(dists)
         # identify the the validity horizon of the closest anchor point
         validity_horizon = self.validity_horizon[idx]
+        validity_horizon_indx = self.validity_horizon_indexes[idx]
 
-        # return self.model_[idx].predict(X)
-        return self.model[idx].predict(X), validity_horizon
+        if self.continuous_model_fit:
+            self.base_learner.reset()
+            self.base_learner.fit(self.memory[-validity_horizon:])
+            return self.base_learner.predict(X)
+        else:
+            return self.model[validity_horizon_indx].predict(X), validity_horizon
     
         

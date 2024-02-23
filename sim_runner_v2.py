@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
-
+from IPython.display import clear_output
 # %matplotlib qt
 import seaborn as sns
 from scipy.ndimage import gaussian_filter
@@ -56,7 +56,11 @@ def run(model, online_model, dataset, dataset_configs):
     val_horizon_list = []
     validity_horizon_list = []
     # error_list = []
-    for k, (X, y) in enumerate(tqdm(zip(data_X, data_y))):
+    for k, (X, y) in enumerate(tqdm(zip(data_X, data_y),leave=False, disable=False, total=len(data_y))):
+        
+        if X[0] < 0:
+            y = 0
+
         try:
             pred_y = online_model.predict_online_model(X)[0]
             # print('predication succeeded')
@@ -75,7 +79,12 @@ def run(model, online_model, dataset, dataset_configs):
         # error_list.append(np.absolute(y - pred_y))
 
         # validity_horizon_list.append(len(online_model.memory))
-        validity_horizon_list.append(online_model.validity_horizon)
+        if online_model.method_name == 'MSMSA':
+            validity_horizon_list.append(online_model.validity_horizon)
+        elif online_model.method_name == 'MSMSA+':
+            validity_horizon_list.append(np.mean(online_model.validity_horizon))
+        else:
+            validity_horizon_list.append(len(online_model.memory))
 
     y_rescaled = rescale(y_list, scaler_y)
     # y_rescaled = y_list
@@ -96,9 +105,10 @@ def run(model, online_model, dataset, dataset_configs):
                     # 'RRSE': np.sqrt(np.sum(update_info_list**2)/np.sum((data_y - np.mean(data_y))**2)),
                     'TargetMean': np.mean(y_rescaled),
                     'TargetSTD': np.std(y_rescaled),
-                    # 'Error': error_list,
-                    # 'Predictions': pred_y_rescaled,
-                    # 'MeanValidityHorizon': np.mean(update_info_list),
+                    'Error': error_list,
+                    'Predictions': pred_y_rescaled,
+                    'ValidityHorizon': validity_horizon_list,
+                    'MeanValidityHorizon': np.mean(validity_horizon_list),
                 }
     # if dataset == 'Teconer':
     #     return run_summary, pred_y_rescaled
@@ -109,38 +119,39 @@ wandb_logrun = False
 pickle_log = True
 
 
-################# REAL DATA #################
-datasets = [
-            'Bike (daily)',
-            # 'Bike (hourly)',
-            # 'Household energy',
-            # 'Melbourn housing',
-            # 'Air quality',
-            # 'Friction',
-            # 'NYC taxi',
-            'Teconer_10K'
-                ]
-dataset_configs = {'noise_var':     None,
-                   'stream_size':   None,
-                   'drift_prob':    None,
-                   'dim':           None}
-noise_vars = ['-1']
+# ################ REAL DATA #################
+# datasets = [
+#             # 'Bike (daily)',
+#             'Bike (hourly)',
+#             'Household energy',
+#             'Melbourn housing',
+#             # 'Air quality',
+#             # 'Friction',
+#             # 'NYC taxi',
+#             # 'Teconer_100K',
+#             # 'Teconer_10K'
+#                 ]
+# dataset_configs = {'noise_var':     None,
+#                    'stream_size':   None,
+#                    'drift_prob':    None,
+#                    'dim':           None}
+# noise_vars = ['-1']
 
 
 ################# SYNTHETIC DATA #################
-# datasets = ['Hyper-A',
-#             'Hyper-I',
-#             'Hyper-G',
-#             'Hyper-LN',
-#             'Hyper-RW',
-#             'Hyper-GU'
-#                ]
+datasets = ['Hyper-A',
+            'Hyper-I',
+            'Hyper-G',
+            'Hyper-LN',
+            'Hyper-RW',
+            'Hyper-GU'
+               ]
 
-# dataset_configs = {'noise_var': None,
-#                    'stream_size': 1_000,
-#                    'drift_prob':0.01,
-#                    'dim': 10}
-# noise_vars = [.1]
+dataset_configs = {'noise_var': None,
+                   'stream_size': 1_000,
+                   'drift_prob':0.01,
+                   'dim': 10}
+noise_vars = [2]
 
 
 # datasets = ['Household energy']
@@ -166,16 +177,16 @@ base_learners = [
 num_monte = 1
 
 logs = pd.DataFrame()
-for monte in tqdm(range(num_monte)):
+for monte in tqdm(range(num_monte), position=0, leave=True):
     # print('------ NUMBER OF MONTE SIMS: ', monte, '/', num_monte)
-    for base_learner in tqdm(base_learners, leave=False):
-        for dataset in tqdm(datasets, leave=False):
-            for noise_var in tqdm(noise_vars, leave=False):
+    for base_learner in tqdm(base_learners, leave=False, disable=True):
+        for dataset in tqdm(datasets, leave=False, disable=True):
+            for noise_var in tqdm(noise_vars, leave=False, disable=True):
                 dataset_configs['noise_var'] = noise_var
                 online_models = [
-                            # msmsa_plus.MSMSA_plus(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=500),
+                            msmsa_plus.MSMSA_plus(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=500, continuous_model_fit=False),
                             # aue.AUE(min_memory_len=10, batch_size=20),
-                            msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8),
+                            msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=500, continuous_model_fit=False),
                             # davar_reg.DAVAR(lam=10),
                             kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
                             # adwin_reg.ADWIN(delta=0.002),
@@ -186,7 +197,9 @@ for monte in tqdm(range(num_monte)):
                 for online_model in online_models:
                     online_model.base_learner = base_learner
 
-                for online_model in tqdm(online_models, leave=False):
+                for online_model in tqdm(online_models, leave=False, disable=True):
+                # for online_model in tqdm(online_models, leave=False, disable=True):
+                
                     (run_summary, predictions, val_horizon) = run(    
                             online_model=online_model,
                             dataset=dataset,
@@ -194,8 +207,14 @@ for monte in tqdm(range(num_monte)):
                             dataset_configs=dataset_configs,
                             )
                     # print run_summary fields of interest
-                    # print('Method:', run_summary['method'], 'MAE:', run_summary['MAE'])
-                    print(run_summary)
+                    # print(
+                    #     'Learning Model:', run_summary['learning_model'],
+                    #     'Dataset:', run_summary['dataset'],
+                    #     'Method:', run_summary['method'],
+                    #     'MAE:', run_summary['MAE']
+                    #       )
+                          
+                    # print(run_summary)
                     # use pd concat to append run_summary to logs
                     logs = pd.concat([logs, pd.DataFrame([run_summary])], ignore_index=True)
                     
@@ -213,10 +232,18 @@ for monte in tqdm(range(num_monte)):
 #         pickle.dump(val_horizon, f)
 
 
+# make 3 subplots
+
+fig, axs = plt.subplots(1, 2, figsize=(10, 10))
+
 # plot MAE for every method and every dataset on sns barplot
-sns.set_theme(style="whitegrid")
-ax = sns.barplot(x="method", y="MAE", data=logs, hue="dataset", ci="sd")
+# sns.set_theme(style="whitegrid")
+axs[0] = sns.barplot(x="dataset", y="MAE", data=logs, hue="method", errorbar="sd",ax=axs[0])
+
+# plot validity horizon for every method and every dataset on sns barplot
+axs[1] = sns.barplot(x="dataset", y="MeanValidityHorizon", data=logs, hue="method", errorbar="sd", ax=axs[1])
 plt.show()
+
 
 
     

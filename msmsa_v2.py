@@ -10,20 +10,21 @@ from scipy.ndimage import gaussian_filter
 
 class MSMSA:
 
-    def __init__(self, lam=0.1, min_memory_len=10, update_freq_factor=1, num_anchors = 1000, max_horizon=50000):
+    def __init__(self, lam=0.8, min_memory_len=10, update_freq_factor=1, num_anchors = 1000, max_horizon=50000, continuous_model_fit=True):
         self.max_horizon = max_horizon
         self.base_learner = None
         self.base_learner_is_fitted = False
+        self.continuous_model_fit = False
         self.t = 0
-        self.num_candids = 50
+        self.num_candids = 100
         self.num_anchors = num_anchors
-        # self.hor_candids = list(np.unique([max(int(1.15**j), min_memory_len) for j in range(1, self.num_candids+1)]))
-        self.hor_candids = list(np.unique([max(int(1.2**j), min_memory_len) for j in range(1, self.num_candids+1)]))
+        self.hor_candids = list(np.unique([max(int(1.15**j), min_memory_len) for j in range(1, self.num_candids+1)]))
+        # self.hor_candids = list(np.unique([max(int(1.2**j), min_memory_len) for j in range(1, self.num_candids+1)]))
         
         # drop all horizons that are greater than max_horizon
         self.hor_candids = [i for i in self.hor_candids if i <= max_horizon]
         # self.hor_candids = self.hor_candids[self.hor_candids <= max_horizon]
-        print(self.hor_candids)
+        # print(self.hor_candids)
         # self.hor_candids = np.unique([max(int(2**(j)), min_memory_len) for j in range(1, self.num_candids+1)])
         # self.num_candids = 500
         # self.hor_candids = range(min_memory_len,self.num_candids)
@@ -105,14 +106,15 @@ class MSMSA:
         if not all(np.isnan(v) for v in self.avars_scalarized): # check for warm start condition
             idx = self.index_of_minimum(self.avars_scalarized)
             self.validity_horizon_index = idx
-            # self.validity_horizon = min(self.t, self.hor_candids[idx])
+            # self.validity_horizon = min(self.t, self.hor_candids[idx]) # never happens
             self.validity_horizon = self.hor_candids[idx]
-            if self.validity_horizon > self.t:
-                print('validity horizon is greater than t')
-                # self.validity_horizon = self.t
-            self.base_learner = self.models[idx]
-            # self.base_learner.reset()
-            # self.base_learner.fit(self.memory[-self.validity_horizon:])
+            
+            # if self.continuous_model_fit:
+            #     self.base_learner.reset()
+            #     self.base_learner.fit(self.memory[-self.validity_horizon:])
+            # else:
+            #     self.base_learner = self.models[idx]
+            
             return None
         else: # means all values in avars are nan and hence we are in the cold start period
             self.validity_horizon = self.t
@@ -174,4 +176,10 @@ class MSMSA:
     
 
     def predict_online_model(self, X):
-        return self.base_learner.predict(X)
+        if self.continuous_model_fit:
+            self.base_learner.reset()
+            self.base_learner.fit(self.memory[-self.validity_horizon:])
+            return self.base_learner.predict(X)
+        else:
+            return self.models[self.validity_horizon_index].predict(X)
+        # return self.base_learner.predict(X)
