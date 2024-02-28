@@ -64,25 +64,31 @@ def run(model, online_model, dataset, dataset_configs):
 
     trips = []
     # error_list = []
+    num_records = len(data_y)
+
     for k, (X, y) in enumerate(tqdm(zip(data_X, data_y),leave=False, disable=False, total=len(data_y))):
         
 
-        # try:
-        #     pred_y = online_model.predict_online_model(X)[0]
-        
-        #     # print('predication succeeded')
-        # except:
-        #     # if prediction fails, use the previous prediction
-        #     pred_y = pred_y
-        #     # print('predication failed')
+        if k < num_records - 1e5:
+            online_model.add_sample(X, y)
+            continue
 
-        # pred_y = float(pred_y)
-        # validation_mae = np.absolute(y - pred_y)
-        update_info = online_model.update_online_model(X, y)
-        # trip_id = int(X[-2])
-        # print('trip_id: ', trip_id, X[-1])
+        if online_model.method_name == 'Naive':
+            if trip_ids[k] not in predicted_trip_ids and k > num_records - 1e5:
+                update_info = online_model.update_online_model(X, y)
+            else:
+                online_model.add_sample(X, y)
+
+        else:
+            update_info = online_model.update_online_model(X, y)
+
         
+
+        
+
         if trip_ids[k] not in predicted_trip_ids:
+
+            
             # build X_trip and y_trip from data_X and data_y where X[0] == trip_id
             X_trip = data_X[trip_ids == trip_ids[k]]
             y_trip = data_y[trip_ids == trip_ids[k]]
@@ -97,66 +103,9 @@ def run(model, online_model, dataset, dataset_configs):
             X_trip_rescaled = rescale_features(X_trip, scaler_X)
             trips.append([trip_ids[k], X_trip_rescaled, y_trip_rescaled, pred_trip_rescaled])
 
-            # plot the trip and the prediction
-            # if len(predicted_trip_ids) % 10 == 0:
-            #     plt.cla()
-            #     plt.plot(y_trip_rescaled, label='Measured')
-            #     plt.plot(pred_trip_rescaled, label='Predicted')
-            #     plt.xlabel('Sample #')
-            #     plt.ylabel('Friction')
-            #     plt.ylim(0, 1)
-            #     plt.legend()
-            #     plt.pause(0.01)
-
-            # # put [trip_id, X_trip, y_trip, pred_trip] in a csv file with trip id name
-            # with open('trips/'+str(trip_ids[k])+'.csv', 'w') as f:
-            #     f.write('trip_id, X_trip, y_trip, pred_trip\n')
-            #     for i in range(len(X_trip)):
-            #         f.write(str(trip_ids[k])+','+str(X_trip[i])+','+str(y_trip[i])+','+str(pred_trip[i])+'\n')
-
-        # validation_mae_list.append(validation_mae)
-        # y_pred_list.append(pred_y)
-        # y_list.append(y)
-        # error_list.append(np.absolute(y - pred_y))
-
-        # validity_horizon_list.append(len(online_model.memory))
-        # if online_model.method_name == 'MSMSA':
-        #     validity_horizon_list.append(online_model.validity_horizon)
-        # elif online_model.method_name == 'MSMSA+':
-        #     validity_horizon_list.append(np.mean(online_model.validity_horizon))
-        # else:
-        #     validity_horizon_list.append(len(online_model.memory))
-
-    # y_rescaled = rescale(y_list, scaler_y)
-    # y_rescaled = y_list
-    # pred_y_rescaled = rescale(y_pred_list, scaler_y)
-    # error_list = np.absolute(y_rescaled - pred_y_rescaled)
-    # mae_inv = np.absolute(y_inv - pred_y_inv)
-    # y_bar_inv = np.mean(y_inv)
-
-    
-    # run_summary = { 'dataset': dataset,
-    #                 'stream_size': len(data_y),
-    #                 'method': online_model.method_name,
-    #                 'learning_model': type(model.model).__name__,
-    #                 # 'MAE': np.mean(error_list),
-    #                 # 'noise_var': dataset_configs['noise_var'],
-    #                 # 'STD': np.std(update_info_list),
-    #                 # 'RMSE': np.sqrt(np.mean(update_info_list**2)),
-    #                 # 'RRSE': np.sqrt(np.sum(update_info_list**2)/np.sum((data_y - np.mean(data_y))**2)),
-    #                 'TargetMean': np.mean(y_rescaled),
-    #                 'TargetSTD': np.std(y_rescaled),
-    #                 'Error': error_list,
-    #                 'Predictions': pred_y_rescaled,
-    #                 'ValidityHorizon': validity_horizon_list,
-    #                 'MeanValidityHorizon': np.mean(validity_horizon_list),
-    #             }
-    # if dataset == 'Teconer':
-    #     return run_summary, pred_y_rescaled
-    # pickle trips
+         
     with open('trips_road_piece_msmsa.pkl', 'wb') as f:
         pickle.dump(trips, f)
-    # return run_summary, pred_y_rescaled, validity_horizon_list
 
 
 wandb_log = False
@@ -200,13 +149,13 @@ for monte in tqdm(range(num_monte), position=0, leave=True):
                 online_models = [
                             # msmsa_plus.MSMSA_plus(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=500, continuous_model_fit=False),
                             # aue.AUE(min_memory_len=10, batch_size=20),
-                            msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=2000, continuous_model_fit=False),
+                            # msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=2000, continuous_model_fit=False),
                             # davar_reg.DAVAR(lam=10),
                             # kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
                             # adwin_reg.ADWIN(delta=0.002),
                             # ddm_reg.DDM(alpha_w=2, alpha_d=3),
                             # ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),
-                            # naive_reg.Naive()
+                            naive_reg.Naive()
                             ]
                 for online_model in online_models:
                     online_model.base_learner = base_learner
@@ -220,43 +169,6 @@ for monte in tqdm(range(num_monte), position=0, leave=True):
                             model=base_learner,
                             dataset_configs=dataset_configs,
                             )
-                    # print run_summary fields of interest
-                    # print(
-                    #     'Learning Model:', run_summary['learning_model'],
-                    #     'Dataset:', run_summary['dataset'],
-                    #     'Method:', run_summary['method'],
-                    #     'MAE:', run_summary['MAE']
-                    #       )
-                          
-                    # print(run_summary)
-                    # use pd concat to append run_summary to logs
-                    # logs = pd.concat([logs, pd.DataFrame([run_summary])], ignore_index=True)
-                    
-                    # if wandb_log:
-                    #     wandb.log(run_summary)
-                    #     wandb.finish(quiet=True)
-
-# pickle the logs every 10 monte sims
-# if pickle_log:
-#     with open(dataset+'_run_summary.pkl', 'wb') as f:
-#         pickle.dump(logs, f)
-#     with open(dataset+'_predictions.pkl', 'wb') as f:
-#         pickle.dump(predictions, f)
-#     with open(dataset+'_val_horizon.pkl', 'wb') as f:
-#         pickle.dump(val_horizon, f)
-
-
-# make 3 subplots
-
-# fig, axs = plt.subplots(1, 2, figsize=(10, 10))
-
-# # plot MAE for every method and every dataset on sns barplot
-# # sns.set_theme(style="whitegrid")
-# axs[0] = sns.barplot(x="dataset", y="MAE", data=logs, hue="method", errorbar="sd",ax=axs[0])
-
-# # plot validity horizon for every method and every dataset on sns barplot
-# axs[1] = sns.barplot(x="dataset", y="MeanValidityHorizon", data=logs, hue="method", errorbar="sd", ax=axs[1])
-# plt.show()
 
 
 

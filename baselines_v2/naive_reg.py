@@ -53,7 +53,10 @@ class Naive:
         return None
     
     def predict_online_model(self, X):
-        return self.base_learner.predict(X)
+        if self.base_learner_is_fitted:
+            return self.base_learner.predict(X)
+        elif len(self.memory) > 0:
+            return self.memory[-1][1]
     
     
     def mean_absoulte_error(self, y_true, y_pred):
