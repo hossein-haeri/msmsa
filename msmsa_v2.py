@@ -19,16 +19,10 @@ class MSMSA:
         self.num_candids = 100
         self.num_anchors = num_anchors
         self.hor_candids = list(np.unique([max(int(1.15**j), min_memory_len) for j in range(1, self.num_candids+1)]))
-        # self.hor_candids = list(np.unique([max(int(1.2**j), min_memory_len) for j in range(1, self.num_candids+1)]))
-        
+        # self.hor_candids = list(np.unique([max(int(1.2**j), min_memory_len) for j in range(1, self.num_candids+1)]))      
         # drop all horizons that are greater than max_horizon
         self.hor_candids = [i for i in self.hor_candids if i <= max_horizon]
-        # self.hor_candids = self.hor_candids[self.hor_candids <= max_horizon]
-        # print(self.hor_candids)
-        # self.hor_candids = np.unique([max(int(2**(j)), min_memory_len) for j in range(1, self.num_candids+1)])
-        # self.num_candids = 500
-        # self.hor_candids = range(min_memory_len,self.num_candids)
-        # print(self.hor_candids)
+
         self.num_candids = len(self.hor_candids)
         self.validity_horizon = 1
         self.validity_horizon_index = 0
@@ -70,27 +64,20 @@ class MSMSA:
                 update_period = max(1,int(tau/self.update_freq_factor))
                 # if self.t%update_period == 0 or self.update_freq_factor == -1:
                 if self.t%tau == 0 or self.update_freq_factor == -1:
-                
                     # train a new model using last tau samples and append it to the right side of the que
                     self.base_learner.reset()
                     self.base_learner.fit(self.memory[-tau:])
                     self.models[i] = self.base_learner
                     # calculate model indicators and store it
                     current_indicators = self.get_model_indicators(self.base_learner)
-                    
-                    # self.indicators[self.t%self.max_indicator_memory, i, :] = current_indicators
-                    
 
                     # recall model indicators calculated tau timestep before
                     if self.update_freq_factor == -1:
                         previous_indicators = self.indicators[(self.t%self.max_indicator_memory)-tau, i, :]
                     else:
-                        # print(self.indicators[(self.t%self.max_indicator_memory), i, :])
                         previous_indicators = self.indicators[(self.t%self.max_indicator_memory)-1, i, :]
                     
                     previous_indicators = self.indicators[0, i, :]
-                    # print('current_indicators: ',current_indicators[:10])
-                    # print('previous_indicators: ',previous_indicators[:10])
 
                     if not np.isnan(self.avars[i,0]):
                         self.avars[i,:] = (1-self.lam) * self.avars[i,:] + self.lam  * (current_indicators - previous_indicators)**2
@@ -108,17 +95,9 @@ class MSMSA:
             self.validity_horizon_index = idx
             # self.validity_horizon = min(self.t, self.hor_candids[idx]) # never happens
             self.validity_horizon = self.hor_candids[idx]
-            
-            # if self.continuous_model_fit:
-            #     self.base_learner.reset()
-            #     self.base_learner.fit(self.memory[-self.validity_horizon:])
-            # else:
-            #     self.base_learner = self.models[idx]
-            
             return None
         else: # means all values in avars are nan and hence we are in the cold start period
             self.validity_horizon = self.t
-            
             self.base_learner.reset()
             self.base_learner.fit(self.memory[-self.validity_horizon:])
             return None
@@ -177,14 +156,13 @@ class MSMSA:
 
     def predict_online_model(self, X):
         try:
-            print('predict_online_model...')
             if self.continuous_model_fit:
                 self.base_learner.reset()
                 self.base_learner.fit(self.memory[-self.validity_horizon:])
                 return self.base_learner.predict(X)
+            
             else:
                 return self.models[self.validity_horizon_index].predict(X)
         except:
             self.base_learner.reset()
             self.base_learner.fit(self.memory)
-        # return self.base_learner.predict(X)

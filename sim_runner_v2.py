@@ -121,14 +121,14 @@ pickle_log = True
 
 # ################ REAL DATA #################
 datasets = [
-            # 'Bike (daily)',
-            # 'Bike (hourly)',
-            # 'Household energy',
-            # 'Melbourn housing',
-            # 'Air quality',
+            'Bike (daily)',
+            'Bike (hourly)',
+            'Household energy',
+            'Melbourn housing',
+            'Air quality',
             # 'Friction',
             # 'NYC taxi',
-            'Teconer_100K',
+            # 'Teconer_100K',
             # 'Teconer_10K'
                 ]
 dataset_configs = {'noise_var':     None,
@@ -138,7 +138,7 @@ dataset_configs = {'noise_var':     None,
 noise_vars = ['-1']
 
 
-################# SYNTHETIC DATA #################
+# ################ SYNTHETIC DATA #################
 # datasets = ['Hyper-A',
 #             'Hyper-I',
 #             'Hyper-G',
@@ -152,16 +152,7 @@ noise_vars = ['-1']
 #                    'drift_prob':0.01,
 #                    'dim': 10}
 # noise_vars = [2]
-
-
-# datasets = ['Household energy']
-# dataset_name = datasets[1]
-
-# model = learning_models.Linear()
-# model = learning_models.DecissionTree()
-# # model = learning_models.KNN()
-# # model = learning_models.SVReg()
-# # model = learning_models.Polynomial()
+## noise_vars = [0, 1, 2, 3, 4, 5]
 
 base_learners = [
             # learning_models.Linear(),
@@ -170,8 +161,6 @@ base_learners = [
             # learning_models.NeuralNet()
             # neural_net_base_learner.DNNRegressor()
         ]
-
-# noise_vars = [0, 1, 2, 3, 4, 5]
 
 
 num_monte = 1

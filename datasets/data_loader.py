@@ -21,12 +21,19 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
     #     df = df.sort_values(by=['Date', 'Time'])
     #     data_X = df[['Latitude', 'Longitude','Tsurf', 'Ta']].to_numpy()
     #     data_y = df['Friction'].to_numpy()
-
+    if dataset_name == 'Teconer_road_piece':
+        df = pd.read_csv('datasets/Teconer_road_piece_full.csv').dropna()
+        # pickle the df 
+        # df.to_pickle(dataset_name+'_records.pkl')
+        # print(df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].head())
+        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy(dtype=float)
+        trip_ids = df['TripID'].to_numpy(dtype=int)
+        data_y = df['Friction'].to_numpy()
     if dataset_name == 'Teconer_10K':
         df = pd.read_csv('datasets/Teconer_2018_Jan_light_10K.csv').dropna()
         # pickle the df 
         df.to_pickle(dataset_name+'_records.pkl')
-        print(df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].head())
+        # print(df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].head())
         data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy()
         trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
@@ -48,12 +55,16 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
         data_y = df['Friction'].to_numpy()
 
     if dataset_name == 'Teconer_full':
-        df = pd.read_csv('datasets/Teconer_2018_Jan_full.csv').dropna()
+        # df = pd.read_csv('datasets/Teconer_2018_Jan_full.csv').dropna()
+        df = pd.read_csv('datasets/Teconer_downtown_full.csv').dropna()
         # pickle the df 
         df.to_pickle(dataset_name+'_records.pkl')
-        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy()
+        # data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
+        data_X = df[['Latitude', 'Longitude']].to_numpy()
         trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
+        # add Gaussian noise to Friction values with std = 0.1
+        # data_y = data_y + np.random.normal(0, 0.4, len(data_y))
 
     if dataset_name == 'NYC taxi':
         df = pd.read_csv('datasets/nyc_taxi_train.csv').dropna()
@@ -100,13 +111,13 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
         # data_X = df[['Lattitude','Longtitude']].to_numpy()
 
     if dataset_name == 'Air quality':
-        df = pd.read_csv('AirQualityUCI.csv').dropna()
+        df = pd.read_csv('datasets/AirQualityUCI.csv').dropna()
         df.drop(df[(df['CO(GT)'] == -200)].index, inplace=True)
         df = df.reset_index().rename(columns={'index': 'index_col'})
         data_X = df[['index_col','PT08.S1(CO)','PT08.S2(NMHC)','PT08.S3(NOx)','PT08.S4(NO2)','PT08.S5(O3)','T','RH','AH']].to_numpy()
         data_y = df['CO(GT)'].to_numpy()
 
-    if dataset_name == 'Friction':
+    if dataset_name == 'datasets/Friction':
         df = pd.read_csv('friction_2.csv', usecols = ['Latitude','Longitude','Height','Tsurf','Ta','Friction']).dropna()
         df = df.reset_index().rename(columns={'index': 'index_col'})
         data_X = df[['index_col','Latitude','Longitude','Height','Tsurf','Ta']].to_numpy()
@@ -146,4 +157,7 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
     data_X = scaler_X.fit_transform(data_X)
     scaler_y = StandardScaler()
     data_y = scaler_y.fit_transform(data_y.reshape(-1, 1)).squeeze()
-    return data_X, data_y, scaler_X, scaler_y, trip_ids
+    if 'Teconer' in dataset_name:
+        return data_X, data_y, scaler_X, scaler_y, trip_ids
+    else:
+        return data_X, data_y, scaler_X, scaler_y

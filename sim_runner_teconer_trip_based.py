@@ -67,14 +67,14 @@ def run(model, online_model, dataset, dataset_configs):
     for k, (X, y) in enumerate(tqdm(zip(data_X, data_y),leave=False, disable=False, total=len(data_y))):
         
 
-        try:
-            pred_y = online_model.predict_online_model(X)[0]
+        # try:
+        #     pred_y = online_model.predict_online_model(X)[0]
         
-            # print('predication succeeded')
-        except:
-            # if prediction fails, use the previous prediction
-            pred_y = pred_y
-            # print('predication failed')
+        #     # print('predication succeeded')
+        # except:
+        #     # if prediction fails, use the previous prediction
+        #     pred_y = pred_y
+        #     # print('predication failed')
 
         # pred_y = float(pred_y)
         # validation_mae = np.absolute(y - pred_y)
@@ -97,11 +97,22 @@ def run(model, online_model, dataset, dataset_configs):
             X_trip_rescaled = rescale_features(X_trip, scaler_X)
             trips.append([trip_ids[k], X_trip_rescaled, y_trip_rescaled, pred_trip_rescaled])
 
-            # put [trip_id, X_trip, y_trip, pred_trip] in a csv file with trip id name
-            # with open('trips/'+str(trip_id)+'.csv', 'w') as f:
+            # plot the trip and the prediction
+            # if len(predicted_trip_ids) % 10 == 0:
+            #     plt.cla()
+            #     plt.plot(y_trip_rescaled, label='Measured')
+            #     plt.plot(pred_trip_rescaled, label='Predicted')
+            #     plt.xlabel('Sample #')
+            #     plt.ylabel('Friction')
+            #     plt.ylim(0, 1)
+            #     plt.legend()
+            #     plt.pause(0.01)
+
+            # # put [trip_id, X_trip, y_trip, pred_trip] in a csv file with trip id name
+            # with open('trips/'+str(trip_ids[k])+'.csv', 'w') as f:
             #     f.write('trip_id, X_trip, y_trip, pred_trip\n')
             #     for i in range(len(X_trip)):
-            #         f.write(str(trip_id)+','+str(X_trip[i])+','+str(y_trip[i])+','+str(pred_trip[i])+'\n')
+            #         f.write(str(trip_ids[k])+','+str(X_trip[i])+','+str(y_trip[i])+','+str(pred_trip[i])+'\n')
 
         # validation_mae_list.append(validation_mae)
         # y_pred_list.append(pred_y)
@@ -143,7 +154,7 @@ def run(model, online_model, dataset, dataset_configs):
     # if dataset == 'Teconer':
     #     return run_summary, pred_y_rescaled
     # pickle trips
-    with open('trips_1M_kswin.pkl', 'wb') as f:
+    with open('trips_road_piece_msmsa.pkl', 'wb') as f:
         pickle.dump(trips, f)
     # return run_summary, pred_y_rescaled, validity_horizon_list
 
@@ -155,8 +166,9 @@ pickle_log = True
 
 ################ REAL DATA #################
 datasets = [
-            'Teconer_1M',
-            # 'Teconer_10K'
+            # 'Teconer_full',
+            # 'Teconer_10K',
+            'Teconer_road_piece'
                 ]
 dataset_configs = {'noise_var':     None,
                    'stream_size':   None,
@@ -188,9 +200,9 @@ for monte in tqdm(range(num_monte), position=0, leave=True):
                 online_models = [
                             # msmsa_plus.MSMSA_plus(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=500, continuous_model_fit=False),
                             # aue.AUE(min_memory_len=10, batch_size=20),
-                            # msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=500, continuous_model_fit=False),
+                            msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=2000, continuous_model_fit=False),
                             # davar_reg.DAVAR(lam=10),
-                            kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
+                            # kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
                             # adwin_reg.ADWIN(delta=0.002),
                             # ddm_reg.DDM(alpha_w=2, alpha_d=3),
                             # ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),
