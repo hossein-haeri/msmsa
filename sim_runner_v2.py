@@ -121,11 +121,11 @@ pickle_log = True
 
 # ################ REAL DATA #################
 datasets = [
-            'Bike (daily)',
-            'Bike (hourly)',
+            # 'Bike (daily)',
+            # 'Bike (hourly)',
             'Household energy',
-            'Melbourn housing',
-            'Air quality',
+            # 'Melbourn housing',
+            # 'Air quality',
             # 'Friction',
             # 'NYC taxi',
             # 'Teconer_100K',
@@ -173,15 +173,15 @@ for monte in tqdm(range(num_monte), position=0, leave=True):
             for noise_var in tqdm(noise_vars, leave=False, disable=True):
                 dataset_configs['noise_var'] = noise_var
                 online_models = [
-                            msmsa_plus.MSMSA_plus(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=500, continuous_model_fit=False),
+                            msmsa_plus.MSMSA_plus(min_memory_len=10, update_freq_factor=1, lam=.8, max_horizon=10000, continuous_model_fit=False),
                             # aue.AUE(min_memory_len=10, batch_size=20),
-                            msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=500, continuous_model_fit=False),
+                            msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=.8, max_horizon=10000, continuous_model_fit=False),
                             # davar_reg.DAVAR(lam=10),
                             kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
                             # adwin_reg.ADWIN(delta=0.002),
                             # ddm_reg.DDM(alpha_w=2, alpha_d=3),
                             # ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),
-                            # naive_reg.Naive()
+                            naive_reg.Naive()
                             ]
                 for online_model in online_models:
                     online_model.base_learner = base_learner
