@@ -3,7 +3,12 @@ from scipy.ndimage import gaussian_filter
 
 
 
-def hyper_abrupt(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, drift_probability=0.01):
+def hyper_abrupt(systhetic_param):
+    stream_size = systhetic_param['stream_size']
+    noise_var = systhetic_param['noise_var']
+    hyperplane_dimension = systhetic_param['dim']
+    drift_probability = systhetic_param['drift_prob']
+
     stream = []
     # initialize and normalize w
     w = np.random.normal(0,scale=1,size=hyperplane_dimension)
@@ -25,7 +30,11 @@ def hyper_abrupt(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, drift
     return stream
 
 
-def hyper_gaussian(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, smoothness = 50, drift_probability=None):
+def hyper_gaussian(systhetic_param, smoothness=50):
+    stream_size = systhetic_param['stream_size']
+    noise_var = systhetic_param['noise_var']
+    hyperplane_dimension = systhetic_param['dim']
+
     stream = []
     # initialize and normalize w_list
     w_list = np.zeros([stream_size, hyperplane_dimension])
@@ -46,7 +55,11 @@ def hyper_gaussian(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, smo
     return stream
 
 
-def hyper_random_walk(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, random_walk_noise=0.01, drift_probability=None):
+def hyper_random_walk(systhetic_param, random_walk_noise=0.01):
+    stream_size = systhetic_param['stream_size']
+    noise_var = systhetic_param['noise_var']
+    hyperplane_dimension = systhetic_param['dim']
+    
     stream = []
     # initialize and normalize w
     w = np.random.normal(0,scale=1,size=hyperplane_dimension)
@@ -63,7 +76,11 @@ def hyper_random_walk(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, 
         stream.append([X, y, w])
     return stream
 
-def hyper_gradual(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, drift_duration_min=10, drift_duration_max=200, drift_duration=200, drift_probability=0.05):
+def hyper_gradual(systhetic_param, drift_duration_min=10, drift_duration_max=200):
+    stream_size = systhetic_param['stream_size']
+    noise_var = systhetic_param['noise_var']
+    hyperplane_dimension = systhetic_param['dim']
+    drift_probability = systhetic_param['drift_prob']
     stream = []
     # initialize and normalize w
     w = np.random.normal(0,scale=1,size=hyperplane_dimension)
@@ -96,7 +113,11 @@ def hyper_gradual(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, drif
     return stream
 
 
-def hyper_incremental(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, drift_duration_min=10, drift_duration_max=200, drift_probability=0.01):
+def hyper_incremental(systhetic_param, drift_duration_min=10, drift_duration_max=200):
+    stream_size = systhetic_param['stream_size']
+    noise_var = systhetic_param['noise_var']
+    hyperplane_dimension = systhetic_param['dim']
+    drift_probability = systhetic_param['drift_prob']
     stream = []
     # initialize and normalize w
     w = np.random.normal(0,scale=1,size=hyperplane_dimension)
@@ -127,7 +148,10 @@ def hyper_incremental(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, 
     return stream
 
 
-def hyper_linear(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, drift_probability=None):
+def hyper_linear(synthetic_param):
+    stream_size = synthetic_param['stream_size']
+    noise_var = synthetic_param['noise_var']
+    hyperplane_dimension = synthetic_param['dim']
     stream = []
     # initialize and normalize w
     w = np.random.normal(0,scale=1,size=hyperplane_dimension)
@@ -149,6 +173,28 @@ def hyper_linear(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, drift
     return stream
 
 
+def simple_heterogeneous(synthetic_param):
+    stream_size = synthetic_param['stream_size']
+    noise_var = synthetic_param['noise_var']
+    m = np.random.uniform(-10, 10, 1)
+    stream = []
+    for k in range(stream_size):
+        # draw uniform random samples 
+        if k%int(stream_size/4) == 0:
+            m = np.random.uniform(-10, 10, 1)
+        X = np.random.uniform(-10, 10, 1)
+        # create the target parameter using the features
+        if X < 0:
+            y = 0
+        else:
+            y = float(m * X[0])
+        # make the stream noisy
+        y = np.random.normal(y, noise_var)
+        # print(X,y,'\n')
+        stream.append([X, y])
+    return stream
+
+
 if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
@@ -157,7 +203,7 @@ if __name__ == "__main__":
     # hyper_gradual(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, drift_duration_min=10, drift_duration_max=200, drift_duration=200, drift_probability=0.05)
     # hyper_incremental(stream_size=1000, noise_var=0.05, hyperplane_dimension=5, drift_duration_min=10, drift_duration_max=200, drift_probability=0.01)
     # hyper_linear(stream_size=1000, noise_var=0.05, hyperplane_dimension=5)
-    stream = hyper_abrupt(stream_size=1000, noise_var=0.05, hyperplane_dimension=1, drift_probability=0.01)
+    stream = hyper_abrupt(systhetic_param={'stream_size':10000, 'noise_var':0.05, 'dim':5, 'drift_prob':0.05})
     # stream = hyper_random_walk(stream_size=10000, noise_var=0.05, hyperplane_dimension=5, random_walk_noise=0.01)
 
     # np.savetxt("hyperplane_data.txt", np.array([item[0:2] for item in stream]))

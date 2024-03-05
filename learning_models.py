@@ -214,7 +214,7 @@ class Polynomial:
 
 
 class NeuralNet:
-    def __init__(self, n_hidden_layers=2, n_neurons_per_layer=50, activation='relu', solver='adam', alpha=0.001, max_iter=20):
+    def __init__(self, n_hidden_layers=2, n_neurons_per_layer=50, activation='relu', solver='adam', alpha=0.005, max_iter=20):
         self.n_hidden_layers = n_hidden_layers
         self.n_neurons_per_layer = n_neurons_per_layer
         self.hidden_layer_sizes = (n_neurons_per_layer,) * n_hidden_layers  # Creates a tuple with a specified number of neurons per layer, repeated for the number of layers

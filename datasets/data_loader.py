@@ -5,7 +5,14 @@ from sklearn.preprocessing import MinMaxScaler
 import stream_generator
 
 # dataset_name = datasets[0]
-def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_var=0.2, drift_probability=0.05):
+def load_dataset(dataset_name, synthetic_param=None):
+    # if synthetic_param is not None:
+    #     synthetic_param['hyperplane_dimension']=10
+    #     synthetic_param['stream_size']=10000
+    #     synthetic_param['noise_var']=0.2
+    #     synthetic_param['drift_probability']=0.05
+
+    
     trip_ids = None
 
     # if dataset_name == 'Teconer':
@@ -26,7 +33,8 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
         # pickle the df 
         # df.to_pickle(dataset_name+'_records.pkl')
         # print(df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].head())
-        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy(dtype=float)
+        # data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy(dtype=float)
+        data_X = df[['AbsoluteTime','Latitude']].to_numpy(dtype=float)
         trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
     if dataset_name == 'Teconer_10K':
@@ -124,34 +132,47 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
         data_y = df['Friction'].to_numpy()
 
     if dataset_name == 'Hyper-A':
-        stream = stream_generator.hyper_abrupt(hyperplane_dimension=hyperplane_dimension, stream_size=stream_size, noise_var=noise_var, drift_probability=drift_probability)
+        stream = stream_generator.hyper_abrupt(synthetic_param)
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])
 
     if dataset_name == 'Hyper-I':
-        stream = stream_generator.hyper_incremental(hyperplane_dimension=hyperplane_dimension, stream_size=stream_size, noise_var=noise_var, drift_probability=drift_probability)
+        stream = stream_generator.hyper_incremental(synthetic_param)
         data_X = np.array([item[0] for item in stream])
-        data_y = np.array([item[1] for item in stream])     
+        data_y = np.array([item[1] for item in stream])
+             
 
     if dataset_name == 'Hyper-G':
-        stream = stream_generator.hyper_gradual(hyperplane_dimension=hyperplane_dimension, stream_size=stream_size, noise_var=noise_var, drift_probability=drift_probability)
+        stream = stream_generator.hyper_gradual(synthetic_param)
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])
 
     if dataset_name == 'Hyper-GU':
-        stream = stream_generator.hyper_gaussian(hyperplane_dimension=hyperplane_dimension, stream_size=stream_size, noise_var=noise_var, drift_probability=drift_probability)
+        stream = stream_generator.hyper_gaussian(synthetic_param)
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])
 
     if dataset_name == 'Hyper-LN':
-        stream = stream_generator.hyper_linear(hyperplane_dimension=hyperplane_dimension, stream_size=stream_size, noise_var=noise_var, drift_probability=drift_probability)
+        stream = stream_generator.hyper_linear(synthetic_param)
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])
 
     if dataset_name == 'Hyper-RW':
-        stream = stream_generator.hyper_random_walk(hyperplane_dimension=hyperplane_dimension, stream_size=stream_size, noise_var=noise_var)
+        stream = stream_generator.hyper_random_walk(synthetic_param)
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])
+
+    if dataset_name == 'SimpleHeterogeneous':
+        stream = stream_generator.simple_heterogeneous(synthetic_param)
+        # print(stream[0])
+        data_X = np.array([item[0] for item in stream])
+        data_y = np.array([item[1] for item in stream])
+
+    # if 'Hyper' in dataset_name:
+    #     # include time (index) as a feature
+    #     data_X = np.column_stack((np.arange(len(data_X)), data_X))
+
+
 
     scaler_X = StandardScaler()
     data_X = scaler_X.fit_transform(data_X)
@@ -161,3 +182,4 @@ def load_dataset(dataset_name, hyperplane_dimension=10,stream_size=10000, noise_
         return data_X, data_y, scaler_X, scaler_y, trip_ids
     else:
         return data_X, data_y, scaler_X, scaler_y
+

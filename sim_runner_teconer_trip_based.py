@@ -36,16 +36,13 @@ def rescale_features(X, scaler):
 
 
 
-def run(model, online_model, dataset, dataset_configs):
+def run(model, online_model, dataset_name, synthetic_param):
         
-    data_X, data_y, scaler_X, scaler_y, trip_ids = load_dataset(dataset,
-                                                hyperplane_dimension=dataset_configs['dim'],
-                                                noise_var=dataset_configs['noise_var'],
-                                                stream_size=dataset_configs['stream_size'],
-                                                drift_probability=dataset_configs['drift_prob'])
+
+    data_X, data_y, scaler_X, scaler_y, trip_ids = load_dataset(dataset_name, synthetic_param)
     
 
-    if 'Teconer_' in dataset:
+    if 'Teconer_' in dataset_name:
         online_model.anchor_samples = data_X
 
     # results = np.zeros([len(data_X),4])
@@ -88,7 +85,7 @@ def run(model, online_model, dataset, dataset_configs):
 
         if trip_ids[k] not in predicted_trip_ids:
 
-            
+
             # build X_trip and y_trip from data_X and data_y where X[0] == trip_id
             X_trip = data_X[trip_ids == trip_ids[k]]
             y_trip = data_y[trip_ids == trip_ids[k]]
@@ -147,11 +144,11 @@ for monte in tqdm(range(num_monte), position=0, leave=True):
             for noise_var in tqdm(noise_vars, leave=False, disable=True):
                 dataset_configs['noise_var'] = noise_var
                 online_models = [
-                            # msmsa_plus.MSMSA_plus(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=500, continuous_model_fit=False),
+                            msmsa_plus.MSMSA_plus(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=500, continuous_model_fit=False),
                             # aue.AUE(min_memory_len=10, batch_size=20),
-                            # msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=2000, continuous_model_fit=False),
+                            msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=2000, continuous_model_fit=False),
                             # davar_reg.DAVAR(lam=10),
-                            # kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
+                            kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
                             # adwin_reg.ADWIN(delta=0.002),
                             # ddm_reg.DDM(alpha_w=2, alpha_d=3),
                             # ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),
@@ -165,9 +162,9 @@ for monte in tqdm(range(num_monte), position=0, leave=True):
                 
                     run(    
                             online_model=online_model,
-                            dataset=dataset,
+                            dataset_name=dataset,
                             model=base_learner,
-                            dataset_configs=dataset_configs,
+                            synthetic_param=dataset_configs,
                             )
 
 

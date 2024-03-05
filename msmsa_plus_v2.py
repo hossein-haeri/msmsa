@@ -16,7 +16,7 @@ class MSMSA_plus:
         self.base_learner = None
         self.base_learner_is_fitted = False
         self.t = 0
-        self.num_candids = 100
+        self.num_candids = 100 
         self.num_anchors = num_anchors
         self.hor_candids = np.unique([max(int(1.15**j), min_memory_len) for j in range(1, self.num_candids+1)])
         # self.hor_candids = np.unique([max(int(2**(j)), min_memory_len) for j in range(1, self.num_candids+1)])

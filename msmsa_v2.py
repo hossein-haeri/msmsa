@@ -6,7 +6,7 @@ import copy
 import sys
 
 from scipy.ndimage import gaussian_filter
-
+import matplotlib.pyplot as plt
 
 class MSMSA:
 
@@ -14,7 +14,7 @@ class MSMSA:
         self.max_horizon = max_horizon
         self.base_learner = None
         self.base_learner_is_fitted = False
-        self.continuous_model_fit = False
+        self.continuous_model_fit = continuous_model_fit
         self.t = 0
         self.num_candids = 100
         self.num_anchors = num_anchors
@@ -88,15 +88,22 @@ class MSMSA:
 
         # average between all anchor points
         self.avars_scalarized = np.mean(self.avars, axis=1)
+        # if self.avars_scalarized has some non-nan values plot the values
+        # if not all(np.isnan(v) for v in self.avars_scalarized):
+        #     plt.cla()
+        #     plt.plot(self.avars_scalarized)
+        #     plt.pause(1)
 
         # find the minimum and the validity horizon
         if not all(np.isnan(v) for v in self.avars_scalarized): # check for warm start condition
             idx = self.index_of_minimum(self.avars_scalarized)
-            self.validity_horizon_index = idx
+            # self.validity_horizon_index = idx
+            self.validity_horizon_index = max(idx+1, len(self.hor_candids)-1)
             # self.validity_horizon = min(self.t, self.hor_candids[idx]) # never happens
             self.validity_horizon = self.hor_candids[idx]
             return None
         else: # means all values in avars are nan and hence we are in the cold start period
+            # print('cold start period', 't:',self.t)
             self.validity_horizon = self.t
             self.base_learner.reset()
             self.base_learner.fit(self.memory[-self.validity_horizon:])
@@ -156,13 +163,18 @@ class MSMSA:
 
     def predict_online_model(self, X):
         try:
+            
             if self.continuous_model_fit:
                 self.base_learner.reset()
                 self.base_learner.fit(self.memory[-self.validity_horizon:])
+                # print('prediction succeeded')
                 return self.base_learner.predict(X)
             
             else:
                 return self.models[self.validity_horizon_index].predict(X)
+            
         except:
+            # print('prediction failed')
             self.base_learner.reset()
             self.base_learner.fit(self.memory)
+            return self.base_learner.predict(X)
