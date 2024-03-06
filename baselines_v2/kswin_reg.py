@@ -21,8 +21,12 @@ class KSWIN(KolmogorovSmirnovWIN):
                     }
 
     def add_sample(self, X, y):
-        self.memory.append((X, y))
-
+        if len(y) == 1:
+            self.memory.append((X, y))
+        elif len(y) > 1:
+            for i in range(len(y)):
+                self.memory.append((X[i], y[i]))
+                
     def detect(self, error):
         # self.add_element(error)
         self.update(error)
