@@ -23,6 +23,7 @@ from baselines_v2 import naive_reg
 from baselines_v2 import aue_reg as aue
 import msmsa_v2 as msmsa
 import msmsa_plus_v2 as msmsa_plus
+import dth
 import neural_net_base_learner
 import wandb
 import os
@@ -134,7 +135,7 @@ synthetic_param = {'noise_var': None,
                    'stream_size': 1_000,
                    'drift_prob':0.01,
                    'dim': 10}
-noise_vars = [0.01]
+noise_vars = [0.1]
 
 ## noise_vars = [0, 1, 2, 3, 4, 5]
 
@@ -147,7 +148,7 @@ base_learners = [
         ]
 
 
-num_monte = 3
+num_monte = 1
 
 logs = []
 for monte in tqdm(range(num_monte), position=0, leave=True):
@@ -157,9 +158,10 @@ for monte in tqdm(range(num_monte), position=0, leave=True):
                 if synthetic_param is not None:
                     synthetic_param['noise_var'] = noise_var
                 online_models = [
-                            msmsa_plus.MSMSA_plus(min_memory_len=10, num_anchors=50, lam=.8, max_horizon=1000, continuous_model_fit=True),
+                            dth.DTH(),
+                            # msmsa_plus.MSMSA_plus(min_memory_len=10, num_anchors=50, lam=.8, max_horizon=1000, continuous_model_fit=True),
                             # aue.AUE(min_memory_len=10, batch_size=20),
-                            msmsa.MSMSA(min_memory_len=10, lam=.8, max_horizon=1000, continuous_model_fit=True),
+                            # msmsa.MSMSA(min_memory_len=10, lam=.8, max_horizon=1000, continuous_model_fit=True),
                             # davar_reg.DAVAR(lam=10),
                             # kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
                             # adwin_reg.ADWIN(delta=0.002),
