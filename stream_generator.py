@@ -176,12 +176,14 @@ def hyper_linear(synthetic_param):
 def simple_heterogeneous(synthetic_param):
     stream_size = synthetic_param['stream_size']
     noise_var = synthetic_param['noise_var']
-    m = np.random.uniform(-10, 10, 1)
+    # m = np.random.uniform(-10, 10, 1)
+    m = 1
     stream = []
     for k in range(stream_size):
         # draw uniform random samples 
-        if k%int(stream_size/4) == 0:
-            m = np.random.uniform(-10, 10, 1)
+        if k > int(stream_size/2):
+            # m = np.random.uniform(-10, 10, 1)
+            m = -1
         X = np.random.uniform(-10, 10, 1)
         # create the target parameter using the features
         if X < 0:

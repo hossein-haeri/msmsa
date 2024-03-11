@@ -27,7 +27,7 @@ import dth
 import neural_net_base_learner
 import wandb
 import os
-from utility.logger import Logger, Plotter
+from utility.utilities import Logger, Plotter
 
 
 # class Logger:
@@ -48,6 +48,8 @@ def run(model, online_model, dataset_name, synthetic_param):
     data_X, data_y, scaler_X, scaler_y = load_dataset(dataset_name, synthetic_param)
 
     logger = Logger()
+    logger.method_name = online_model.method_name
+
     # if 'Teconer_' in dataset_name:
     #     online_model.anchor_samples = data_X
 
@@ -79,11 +81,14 @@ def run(model, online_model, dataset_name, synthetic_param):
             num_train_samples = online_model.validity_horizon
         elif online_model.method_name == 'MSMSA+':
             num_train_samples = np.mean(online_model.validity_horizon)
+            logger.val_hor.append(online_model.validity_horizon)
         else:
             num_train_samples = len(online_model.memory)
 
 
         logger.log(y, y_pred, num_train_samples=num_train_samples)
+        logger.X.append(X)
+        
 
     logger.sclaer_y = scaler_y
     logger.scaler_X = scaler_X
@@ -91,6 +96,8 @@ def run(model, online_model, dataset_name, synthetic_param):
     logger.summary['method_name'] = online_model.method_name
     logger.summary['base_learner_name'] = type(model).__name__
     logger.synthetic_param = synthetic_param
+    if 'MSMSA+' in online_model.method_name:
+        logger.anchors = online_model.anchors
     # logger.method_name = online_model.method_name
     # logger.base_learner_name = type(model).__name__
     # logger.synthetic_param = synthetic_param
@@ -122,13 +129,13 @@ synthetic_param = None
 
 ############## SYNTHETIC DATA #################
 datasets = [
-            'Hyper-A',
-            'Hyper-I',
+            # 'Hyper-A',
+            # 'Hyper-I',
             # 'Hyper-G',
             # 'Hyper-LN',
             # 'Hyper-RW',
             # 'Hyper-GU',
-            # 'SimpleHeterogeneous',
+            'SimpleHeterogeneous',
                ]
 
 synthetic_param = {'noise_var': None,
@@ -158,10 +165,10 @@ for monte in tqdm(range(num_monte), position=0, leave=True):
                 if synthetic_param is not None:
                     synthetic_param['noise_var'] = noise_var
                 online_models = [
-                            dth.DTH(),
-                            # msmsa_plus.MSMSA_plus(min_memory_len=10, num_anchors=50, lam=.8, max_horizon=1000, continuous_model_fit=True),
+                            # dth.DTH(),
+                            msmsa_plus.MSMSA_plus(min_memory_len=10, num_anchors=50, lam=.8, max_horizon=1000, continuous_model_fit=True),
                             # aue.AUE(min_memory_len=10, batch_size=20),
-                            # msmsa.MSMSA(min_memory_len=10, lam=.8, max_horizon=1000, continuous_model_fit=True),
+                            msmsa.MSMSA(min_memory_len=10, lam=.8, max_horizon=1000, continuous_model_fit=True),
                             # davar_reg.DAVAR(lam=10),
                             # kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
                             # adwin_reg.ADWIN(delta=0.002),
@@ -185,28 +192,15 @@ for monte in tqdm(range(num_monte), position=0, leave=True):
 
 
 
-print(logs[0].summary)
+                    print(log.summary)
 # pickle logs
 with open('logs.pkl', 'wb') as f:
         pickle.dump(logs, f)
 
-# fig, axs = plt.subplots(4, 1, figsize=(10, 10))
-# # plot MAE for every method and every dataset on sns barplot
-# axs[0] = sns.barplot(x="dataset_name", y="MAE", data=logs, hue="method", errorbar="sd",ax=axs[0])
-# # plot validity horizon for every method and every dataset on sns barplot
-# axs[1] = sns.barplot(x="dataset_name", y="MeanValidityHorizon", data=logs, hue="method", errorbar="sd", ax=axs[1])
-# # plot 'Error' for every method in a plt.line
-# for i, method in enumerate(online_models):
-#     axs[2].plot(logs['Error'][i], label=method.method_name, alpha=0.5)
-#     axs[3].plot(logs['ValidityHorizon'][i], label=method.method_name)
-# # axs[2].set_title('Prediction Error Over Time')
-# axs[2].set_xlabel('Time')
-# axs[2].set_ylabel('MAE')
-# axs[2].legend()
-# axs[3].set_xlabel('Time')
-# axs[3].set_ylabel('Training Horizon')
-# axs[3].legend()
-# plt.show()
+pltr = Plotter()
+pltr.plot_loggers(logs)
+
+
 
 
 
