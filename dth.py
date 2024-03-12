@@ -4,13 +4,32 @@ import copy
 import sys
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from multiprocessing import Pool
 import torch
 import torch.nn as nn
 
 from utility.sample import Sample
 import learning_models
 
+def worker(memory_slice, start_index, epsilon, sub_learners, current_time):
+            removal_indices = []
+            for i, (X, y, t) in enumerate(memory_slice):
+                prediction_at_sampling_time, stability_at_sampling_time = get_prediction_at(X, t, sub_learners)
+                prediction_at_current_time, stability_at_current_time = get_prediction_at(X, current_time, sub_learners)
+                alpha = np.abs(prediction_at_sampling_time * stability_at_sampling_time - prediction_at_current_time * stability_at_current_time)
+                if alpha > epsilon:
+                    removal_indices.append(start_index + i)
+            return removal_indices
+        
+def get_prediction_at(X, t, sub_learners):
+    # add time to the features 
+    X = np.append(X, t)
+    # print('X:', X)
+    sub_learner_predictions = []
+    for sub_learner in sub_learners:
+        sub_learner_predictions.append(sub_learner.model.predict([X]))
+    return np.mean(sub_learner_predictions), 1/(np.std(sub_learner_predictions)+0.00001)
 
 class DTH:
     ''''' Time needs to be the first feature in the input data. '''''
@@ -22,7 +41,7 @@ class DTH:
                  multi_threading_sub_learners=True, 
                  num_cold_start_samples=10,
                  pruning_disabled=False, 
-                 num_pruning_threads=10,
+                 num_pruning_threads=5,
                  max_elimination = 10):
         ### hyper-parameters
         self.base_learner = learning_models.DecissionTree(max_depth=5)
@@ -83,9 +102,11 @@ class DTH:
                 # prune the memory
                 if not self.pruning_disabled:
                     if self.num_pruning_threads > 1:
-                        # self.prune_memory_concurrent()
-                        pass
+                        # print('pruning with concurrent...')
+                        self.prune_memory_concurrent()
+                        
                     else:
+                        # print('pruning without concurrent...')
                         self.prune_memory()
                     # self.prune_memory_concurrent()
                 
@@ -112,55 +133,60 @@ class DTH:
         # assess the validity of the samples in memory
         for i, (X, y, t) in enumerate(self.memory):
             elimination_count = 0
-            stability_at_sampling_time = self.get_prediction_stability_at(X, t)
-            stability_at_current_time = self.get_prediction_stability_at(X, self.current_time)    
-            prediction_at_sampling_time = self.predict_online_model(X, t)
-            prediction_at_current_time = self.predict_online_model(X, self.current_time)
+            # stability_at_sampling_time = self.get_prediction_stability_at(X, t)
+            # stability_at_current_time = self.get_prediction_stability_at(X, self.current_time)    
+            # prediction_at_sampling_time = self.predict_online_model(X, t)
+            # prediction_at_current_time = self.predict_online_model(X, self.current_time)
 
-            alpha = np.abs(prediction_at_sampling_time*stability_at_sampling_time - prediction_at_current_time*stability_at_current_time)
-            if alpha > self.epsilon:
+            prediction_at_sampling_time, stability_at_sampling_time = get_prediction_at(X, t, self.sub_learners)
+            prediction_at_current_time, stability_at_current_time = get_prediction_at(X, self.current_time, self.sub_learners)
+
+            prediction_at_between_time, stability_at_between_time = get_prediction_at(X, (t+self.current_time)/2, self.sub_learners)
+
+            # set alpha as the difference of the two predictions average and the between time prediction
+            # alpha = np.abs((prediction_at_sampling_time+prediction_at_current_time)/2)
+
+            # alpha = np.abs(prediction_at_sampling_time*stability_at_sampling_time - prediction_at_current_time*stability_at_current_time)
+            # if alpha < self.epsilon:
+            if min(prediction_at_sampling_time, prediction_at_current_time) < prediction_at_between_time < max(prediction_at_sampling_time, prediction_at_current_time):
                 # self.memory.remove(sample)
                 self.memory.pop(i)
                 elimination_count += 1
                 if elimination_count > self.max_elimination:
-                    # self.update_sub_learners()
+                    self.update_sub_learners()
                     elimination_count = 0
     
     def prune_memory_concurrent(self):
-        def worker(memory_slice, start_index):
-            removal_indices = []
-            for i, (X, y, t) in enumerate(memory_slice):
-                alpha = self.calculate_alpha(X, t)
-                if alpha > self.epsilon:
-                    removal_indices.append(start_index + i)
-            return removal_indices
-        
         K = self.num_pruning_threads
-
+        elimination_count = 0
         self.update_sub_learners()
-
-        tasks = []
         chunk_size = len(self.memory) // K + (len(self.memory) % K > 0)
+        tasks = []
         with ThreadPoolExecutor(max_workers=K) as executor:
             for i in range(0, len(self.memory), chunk_size):
                 end_index = min(i + chunk_size, len(self.memory))
                 memory_slice = self.memory[i:end_index]
-                tasks.append(executor.submit(worker, memory_slice, i))
-
+                tasks.append(executor.submit(worker, memory_slice, i, self.epsilon, self.sub_learners, self.current_time))
         indices_to_remove = []
         for future in as_completed(tasks):
             indices_to_remove.extend(future.result())
-
-        # Remove samples in reverse order to maintain correct indexing
+            # Remove samples in reverse order to maintain correct indexing
+        
         for index in sorted(indices_to_remove, reverse=True):
             self.memory.pop(index)
+            elimination_count += 1
+            if elimination_count > self.max_elimination:
+                self.update_sub_learners()
+                elimination_count = 0
 
     def calculate_alpha(self, X, t):
         stability_at_sampling_time = self.get_prediction_stability_at(X, t)
         stability_at_current_time = self.get_prediction_stability_at(X, self.current_time)
         prediction_at_sampling_time = self.predict_online_model(X, t)
         prediction_at_current_time = self.predict_online_model(X, self.current_time)
-        alpha = np.abs(prediction_at_sampling_time * stability_at_sampling_time - prediction_at_current_time * stability_at_current_time)
+        # alpha = np.abs(prediction_at_sampling_time * stability_at_sampling_time - prediction_at_current_time * stability_at_current_time)
+        alpha = np.abs(prediction_at_sampling_time - prediction_at_current_time) + stability_at_sampling_time  + stability_at_current_time
+        
         return alpha
 
 
@@ -175,6 +201,7 @@ class DTH:
         if self.multi_threading_sub_learners:
             # Use ThreadPoolExecutor to manage a pool of threads
             with ThreadPoolExecutor(max_workers=self.num_sub_learners) as executor:
+            # with ProcessPoolExecutor(max_workers=self.num_sub_learners) as executor:
                 futures = []
                 for i, batch in enumerate(batches):
                     # Submit each training task to the thread pool
