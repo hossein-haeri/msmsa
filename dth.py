@@ -63,6 +63,7 @@ class DTH:
         self.memory = []
         self.sample_id_counter = 0
         self.current_time = 0
+        self.first_time = True
         self.new_samples_count_for_base_learner_update = 0 # number of new samples added to memory since last update
         self.new_samples_count_for_pruining = 0
         for _ in range(self.num_sub_learners):
@@ -88,7 +89,6 @@ class DTH:
 
 
     def update_online_model(self):
-        
         if self.new_samples_count_for_base_learner_update >= self.min_new_samples_for_base_learner_update:
             self.new_samples_count_for_base_learner_update = 0
             # fit the base_learner to the memory
@@ -96,20 +96,26 @@ class DTH:
 
         # if self.num_cold_start_samples < len(self.memory) and self.new_samples_count_for_pruining >= self.min_new_samples_for_pruining:
         if self.new_samples_count_for_pruining >= self.min_new_samples_for_pruining:
+            
             if len(self.memory) >= self.num_sub_learners:
+                
             
                 self.new_samples_count_for_pruininge = 0
                 # prune the memory
                 if not self.pruning_disabled:
                     if self.num_pruning_threads > 1:
-                        # print('pruning with concurrent...')
+                        if self.first_time:
+                            print('pruning with concurrent...')
                         self.prune_memory_concurrent()
                         
                     else:
-                        # print('pruning without concurrent...')
+                        if self.first_time:
+                            print('pruning without concurrent...')
                         self.prune_memory()
                     # self.prune_memory_concurrent()
                 
+                    self.first_time = False
+
 
     def fit_base_learner(self):
         # fit the base_learner to the memory
@@ -138,23 +144,26 @@ class DTH:
             # prediction_at_sampling_time = self.predict_online_model(X, t)
             # prediction_at_current_time = self.predict_online_model(X, self.current_time)
 
-            prediction_at_sampling_time, stability_at_sampling_time = get_prediction_at(X, t, self.sub_learners)
             prediction_at_current_time, stability_at_current_time = get_prediction_at(X, self.current_time, self.sub_learners)
+            prediction_at_sampling_time, stability_at_sampling_time = get_prediction_at(X, t, self.sub_learners)
+            
 
             prediction_at_between_time, stability_at_between_time = get_prediction_at(X, (t+self.current_time)/2, self.sub_learners)
 
+            
             # set alpha as the difference of the two predictions average and the between time prediction
             # alpha = np.abs((prediction_at_sampling_time+prediction_at_current_time)/2)
 
             # alpha = np.abs(prediction_at_sampling_time*stability_at_sampling_time - prediction_at_current_time*stability_at_current_time)
             # if alpha < self.epsilon:
-            if min(prediction_at_sampling_time, prediction_at_current_time) < prediction_at_between_time < max(prediction_at_sampling_time, prediction_at_current_time):
-                # self.memory.remove(sample)
-                self.memory.pop(i)
-                elimination_count += 1
-                if elimination_count > self.max_elimination:
-                    self.update_sub_learners()
-                    elimination_count = 0
+            if stability_at_current_time > self.epsilon:
+                if min(prediction_at_sampling_time, prediction_at_current_time) < prediction_at_between_time < max(prediction_at_sampling_time, prediction_at_current_time):
+                    # self.memory.remove(sample)
+                    self.memory.pop(i)
+                    elimination_count += 1
+                    if elimination_count > self.max_elimination:
+                        self.update_sub_learners()
+                        elimination_count = 0
     
     def prune_memory_concurrent(self):
         K = self.num_pruning_threads
