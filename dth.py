@@ -35,7 +35,7 @@ class DTH:
     ''''' Time needs to be the first feature in the input data. '''''
     def __init__(self, 
                  epsilon=0.5, 
-                 num_sub_learners=2, 
+                 num_sub_learners=10, 
                  min_new_samples_for_base_learner_update=1, 
                  min_new_samples_for_pruining=1, 
                  multi_threading_sub_learners=True, 
@@ -48,7 +48,7 @@ class DTH:
         ### hyper-parameters
         self.base_learner = learning_models.DecissionTree(max_depth=5)
         self.num_sub_learners = num_sub_learners
-        self.sub_model = learning_models.DecissionTree(max_depth=5)  # sub-models are used to estimate the uncertainty of the base_learner, they need to be relatively fast or be only a few
+        self.sub_model = learning_models.DecissionTree(max_depth=8)  # sub-models are used to estimate the uncertainty of the base_learner, they need to be relatively fast or be only a few
         self.epsilon = epsilon
         self.min_new_samples_for_base_learner_update = min_new_samples_for_base_learner_update
         self.min_new_samples_for_pruining = min_new_samples_for_pruining
