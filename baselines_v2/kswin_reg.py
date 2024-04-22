@@ -18,15 +18,16 @@ class KSWIN(KolmogorovSmirnovWIN):
                             'stat_size':stat_size,
                             'alpha':alpha,
                             'min_memory_len':min_memory_len
-                    }
+                            }
 
     def add_sample(self, X, y):
-        if len(y) == 1:
+        # check if y is a list (or np.array) or a single value
+        if len([y]) == 1:
             self.memory.append((X, y))
-        elif len(y) > 1:
+        elif len([y]) > 1:
             for i in range(len(y)):
                 self.memory.append((X[i], y[i]))
-                
+
     def detect(self, error):
         # self.add_element(error)
         self.update(error)
@@ -70,13 +71,15 @@ class KSWIN(KolmogorovSmirnovWIN):
         self.base_learner.fit(self.memory)
         if len(self.memory) > 1:
             self.base_learner_is_fitted = True
-        return None
+            
     
     def predict_online_model(self, X):
         if self.base_learner_is_fitted:
             return self.base_learner.predict(X)
         elif len(self.memory) > 0:
-            return self.memory[-1][1]
+            return [self.memory[-1][1]]
+        else:
+            return [0]
     
     
     def mean_absoulte_error(self, y_true, y_pred):

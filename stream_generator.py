@@ -3,7 +3,9 @@ from scipy.ndimage import gaussian_filter
 
 
 
-def hyper_abrupt(systhetic_param):
+def hyper_abrupt(systhetic_param, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     stream_size = systhetic_param['stream_size']
     noise_var = systhetic_param['noise_var']
     hyperplane_dimension = systhetic_param['dim']
@@ -30,7 +32,9 @@ def hyper_abrupt(systhetic_param):
     return stream
 
 
-def hyper_gaussian(systhetic_param, smoothness=50):
+def hyper_gaussian(systhetic_param, smoothness=50, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     stream_size = systhetic_param['stream_size']
     noise_var = systhetic_param['noise_var']
     hyperplane_dimension = systhetic_param['dim']
@@ -55,7 +59,9 @@ def hyper_gaussian(systhetic_param, smoothness=50):
     return stream
 
 
-def hyper_random_walk(systhetic_param, random_walk_noise=0.01):
+def hyper_random_walk(systhetic_param, random_walk_noise=0.01, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     stream_size = systhetic_param['stream_size']
     noise_var = systhetic_param['noise_var']
     hyperplane_dimension = systhetic_param['dim']
@@ -76,7 +82,9 @@ def hyper_random_walk(systhetic_param, random_walk_noise=0.01):
         stream.append([X, y, w])
     return stream
 
-def hyper_gradual(systhetic_param, drift_duration_min=10, drift_duration_max=200):
+def hyper_gradual(systhetic_param, drift_duration_min=10, drift_duration_max=200, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     stream_size = systhetic_param['stream_size']
     noise_var = systhetic_param['noise_var']
     hyperplane_dimension = systhetic_param['dim']
@@ -113,7 +121,9 @@ def hyper_gradual(systhetic_param, drift_duration_min=10, drift_duration_max=200
     return stream
 
 
-def hyper_incremental(systhetic_param, drift_duration_min=10, drift_duration_max=200):
+def hyper_incremental(systhetic_param, drift_duration_min=10, drift_duration_max=200, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     stream_size = systhetic_param['stream_size']
     noise_var = systhetic_param['noise_var']
     hyperplane_dimension = systhetic_param['dim']
@@ -148,7 +158,9 @@ def hyper_incremental(systhetic_param, drift_duration_min=10, drift_duration_max
     return stream
 
 
-def hyper_linear(synthetic_param):
+def hyper_linear(synthetic_param, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     stream_size = synthetic_param['stream_size']
     noise_var = synthetic_param['noise_var']
     hyperplane_dimension = synthetic_param['dim']
@@ -173,7 +185,9 @@ def hyper_linear(synthetic_param):
     return stream
 
 
-def simple_heterogeneous(synthetic_param):
+def simple_heterogeneous(synthetic_param, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     stream_size = synthetic_param['stream_size']
     noise_var = synthetic_param['noise_var']
     # m = np.random.uniform(-10, 10, 1)

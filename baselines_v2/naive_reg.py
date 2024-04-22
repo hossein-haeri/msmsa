@@ -50,13 +50,15 @@ class Naive:
         self.base_learner.fit(self.memory)
         if len(self.memory) > 1:
             self.base_learner_is_fitted = True
-        return None
+
     
     def predict_online_model(self, X):
         if self.base_learner_is_fitted:
             return self.base_learner.predict(X)
         elif len(self.memory) > 0:
-            return self.memory[-1][1]
+            return [self.memory[-1][1]]
+        else:
+            return [0]
     
     
     def mean_absoulte_error(self, y_true, y_pred):

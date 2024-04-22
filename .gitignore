@@ -1,3 +1,5 @@
 
 *.csv
 *.pkl
+wandb/
+pickled_logs/

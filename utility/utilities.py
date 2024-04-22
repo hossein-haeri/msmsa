@@ -35,28 +35,28 @@ class Plotter:
 
 
 
-        # plot mae vs X
-        fig2, axs2 = plt.subplots(1, 1, figsize=(10, 10))
-        for i, logger in enumerate(loggers):
-            y = np.array(logger.y).squeeze()
-            y_pred = np.array(logger.y_pred).squeeze()
-            X = np.array(logger.X).squeeze()
-            e = np.abs(y - y_pred)
-            # print(, logger.y)
-                # sns.lineplot(x=X, y=e, label=logger.method_name, ax=axs2)
-                # plt.xlabel('X')
-                # plt.ylabel('MAE')
+        # # plot mae vs X
+        # fig2, axs2 = plt.subplots(1, 1, figsize=(10, 10))
+        # for i, logger in enumerate(loggers):
+        #     y = np.array(logger.y).squeeze()
+        #     y_pred = np.array(logger.y_pred).squeeze()
+        #     X = np.array(logger.X).squeeze()
+        #     e = np.abs(y - y_pred)
+        #     # print(, logger.y)
+        #         # sns.lineplot(x=X, y=e, label=logger.method_name, ax=axs2)
+        #         # plt.xlabel('X')
+        #         # plt.ylabel('MAE')
 
         
-            fig4, axs4 = plt.subplots(1, 1, figsize=(10, 10))
-            t = np.arange(0, len(y), 1)
+        #     fig4, axs4 = plt.subplots(1, 1, figsize=(10, 10))
+        #     t = np.arange(0, len(y), 1)
 
-            contour = axs4.tricontourf(X, t, e, 20, cmap='jet')
-            axs4.set_xlabel('X')
-            axs4.set_ylabel('Timestep')
-            # set colorbar
-            plt.colorbar(contour, ax=axs4)
-            # cbar = plt.colorbar(axs4)
+        #     contour = axs4.tricontourf(X, t, e, 20, cmap='jet')
+        #     axs4.set_xlabel('X')
+        #     axs4.set_ylabel('Timestep')
+        #     # set colorbar
+        #     plt.colorbar(contour, ax=axs4)
+        #     
             
 
 
@@ -93,7 +93,7 @@ class Logger:
         self.X = []
         self.y = []
         self.y_pred = []
-        self.num_train_samples = []
+        self.num_train_samples_list = []
         self.errors = []
         self.memory_history = [] 
         self.method_name = ''
@@ -106,15 +106,23 @@ class Logger:
     def log(self, y, y_pred, num_train_samples=None):
         self.y.append(y)
         self.y_pred.append(y_pred)
-        self.num_train_samples.append(num_train_samples)
+        self.num_train_samples_list.append(num_train_samples)
         self.errors.append(np.abs(y - y_pred))
+        
     
     def finish(self):
+        self.summary['average_training_samples'] = np.mean(self.num_train_samples_list)
         self.summary['mae'] = np.mean(self.errors)
-        self.summary['average_training_samples'] = np.mean(self.num_train_samples)
+        # add RMSE to the summary dictionary
+        self.summary['rmse'] = np.sqrt(np.mean(np.square(self.errors)))
+        # add MAPE to the summary dictionary
+        self.summary['mape'] = np.mean(np.abs(self.errors / np.array(self.y)))
+
 
         # assuming synthetic_param is a dictionary, concat it to the summary dictionary
-        self.summary = {**self.summary, **self.synthetic_param}
+        if 'Hyper' in self.summary['dataset_name']:
+            self.summary = {**self.summary, **self.synthetic_param}
+        
 
         
 

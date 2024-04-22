@@ -8,6 +8,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import SVR
 from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import RandomForestRegressor
 
 class MovMean:
     def __init__(self):
@@ -100,7 +101,40 @@ class DecissionTree:
     def reset(self):
         self.__init__(max_depth=self.max_depth)
 
-        
+
+class RandomForest:
+    def __init__(self, n_estimators=100, max_depth=5, n_jobs=-1):
+        self.n_estimators = n_estimators
+        self.max_depth = max_depth
+        self.n_jobs = n_jobs
+        self.model = RandomForestRegressor(n_estimators=self.n_estimators, max_depth=self.max_depth)
+        self.y_pred_history = []
+        self.error_history = []
+
+    def fit(self, train_data):
+        X = [sample[0] for sample in train_data]
+        y = [sample[1] for sample in train_data]
+        if len(train_data) > 1:
+            self.model.fit(X, y)
+        else:
+            pass
+
+    def predict(self, X):
+        # if X is a single feature vector
+        if len(X.shape) == 1:
+            pred = self.model.predict([X])
+        # if X is a batch of feature vectors
+        else:
+            pred = self.model.predict(X)
+        return pred
+    
+    def get_sub_predictions(self, X):
+        tree_predictions =  [tree.predict(X) for tree in self.model.estimators_]
+        return np.mean(tree_predictions, axis=0), np.std(tree_predictions, axis=0)
+
+    def reset(self):
+        self.__init__(n_estimators=self.n_estimators, max_depth=self.max_depth, n_jobs=self.n_jobs)
+
 
 class Linear:
     def __init__(self, alpha=10):
