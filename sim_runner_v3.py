@@ -59,7 +59,6 @@ def run(model, online_model, dataset_name, synthetic_param, seed=None):
         # PREDICTION
         y_pred = online_model.predict_online_model(X_with_time)[0]
 
-        
         # ADD SAMPLE AND UPDATE MODEL
         if 'DTH' in online_model.method_name:
             # online_model.add_sample([X[1:]], y, X[0])
@@ -96,9 +95,6 @@ def run(model, online_model, dataset_name, synthetic_param, seed=None):
     logger.synthetic_param = synthetic_param
     if 'MSMSA+' in online_model.method_name:
         logger.anchors = online_model.anchors
-    # logger.method_name = online_model.method_name
-    # logger.base_learner_name = type(model).__name__
-    # logger.synthetic_param = synthetic_param
     logger.finish()
     return logger
 
@@ -112,8 +108,6 @@ dataset_name = sys.argv[1]
 online_model_name = sys.argv[2]
 base_learner_name = sys.argv[3]
 seed = sys.argv[4]
-# online_model_name = 'KSWIN'
-# base_learner_name = 'Linear'
 
 
 # ################ REAL DATA #################
@@ -143,16 +137,16 @@ seed = sys.argv[4]
 
 
 if 'Hyper' in dataset_name:
-    synthetic_param = {'noise_var': 0.1, # [0, 1, 2, 3, 4, 5]
+    synthetic_param = {'noise_var': 0.01, # [0, 1, 2, 3, 4, 5]
                        'stream_size': 1_000,
                        'drift_prob':0.01,
-                       'dim': 10}
+                       'dim': 5}
 else:
     synthetic_param = None
 
 
 if base_learner_name == 'RF':
-    base_learner = learning_models.RandomForest(n_estimators=10, max_depth=5, n_jobs=-1)
+    base_learner = learning_models.RandomForest(n_estimators=10, n_jobs=-1)
 elif base_learner_name == 'LNR':
     base_learner = learning_models.Linear()
 elif base_learner_name == 'DT':

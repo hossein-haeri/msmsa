@@ -17,10 +17,10 @@ import learning_models
 class DTH:
     ''''' Time needs to be the first feature in the input data. '''''
     def __init__(self, 
-                 epsilon=0.99,
+                 epsilon=0.9,
                  ):
         ### hyper-parameters
-        self.base_learner = learning_models.RandomForest(n_estimators=100, max_depth=5, n_jobs=-1)
+        self.base_learner = learning_models.RandomForest(n_estimators=100, max_depth=7, n_jobs=-1)
         self.epsilon = epsilon
 
         #### initialization
@@ -67,7 +67,8 @@ class DTH:
         prob_y_current  = np.exp(-0.5 * ((y - mu_c) / sigma_c)**2) / (sigma_c)
         prob_y_original = np.exp(-0.5 * ((y - mu_o) / sigma_o)**2) / (sigma_o)
 
-        prior = np.array([sample.expiration_probability for sample in self.memory])
+        # prior = np.array([sample.expiration_probability for sample in self.memory])
+        prior = 0.5
         prob_original_given_y = ((prob_y_original * prior) /
                                     (prob_y_original * prior + prob_y_current * (1 - prior)))
         
