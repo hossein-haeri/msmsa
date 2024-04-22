@@ -68,7 +68,7 @@ class DTH:
         prob_y_original = np.exp(-0.5 * ((y - mu_o) / sigma_o)**2) / (sigma_o)
 
         # prior = np.array([sample.expiration_probability for sample in self.memory])
-        prior = 0.5
+        # prior = 0.5
         prob_original_given_y = ((prob_y_original * prior) /
                                     (prob_y_original * prior + prob_y_current * (1 - prior)))
         

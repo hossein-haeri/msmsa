@@ -108,6 +108,9 @@ dataset_name = sys.argv[1]
 online_model_name = sys.argv[2]
 base_learner_name = sys.argv[3]
 seed = sys.argv[4]
+# if additional argument is given get it as the tag for wandb
+if len(sys.argv) > 5:
+    wandb_run.tags = sys.argv[5:]
 
 
 # ################ REAL DATA #################
@@ -140,7 +143,7 @@ if 'Hyper' in dataset_name:
     synthetic_param = {'noise_var': 0.01, # [0, 1, 2, 3, 4, 5]
                        'stream_size': 1_000,
                        'drift_prob':0.01,
-                       'dim': 5}
+                       'dim': 10}
 else:
     synthetic_param = None
 
