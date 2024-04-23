@@ -40,7 +40,7 @@ def rescale(y, scaler):
 
 def run(model, online_model, dataset_name, synthetic_param, seed=None):
         
-    data_X, data_y, scaler_X, scaler_y = load_dataset(dataset_name, synthetic_param, seed=int(seed))
+    data_X, data_y, scaler_X, scaler_y, hyper_w = load_dataset(dataset_name, synthetic_param, seed=int(seed))
 
     logger = Logger()
     logger.method_name = online_model.method_name
@@ -86,6 +86,8 @@ def run(model, online_model, dataset_name, synthetic_param, seed=None):
         stream_bar.set_postfix(MemSize=num_train_samples, Ratio=(num_train_samples+1)/(k+1))
         
         wandb.log({'run_mae': np.abs(y - y_pred)})
+        if 'Hyper' in dataset_name:
+            wandb.log({'w': hyper_w})
         
 
     logger.sclaer_y = scaler_y
@@ -94,6 +96,7 @@ def run(model, online_model, dataset_name, synthetic_param, seed=None):
     logger.summary['method_name'] = online_model.method_name
     logger.summary['base_learner_name'] = type(model).__name__
     logger.synthetic_param = synthetic_param
+    logger.summary['seed'] = seed
     if 'MSMSA+' in online_model.method_name:
         logger.anchors = online_model.anchors
     logger.finish()
@@ -119,7 +122,7 @@ if 'Hyper' in dataset_name:
     synthetic_param = {'noise_var': 0.1, # [0, 1, 2, 3, 4, 5]
                        'stream_size': 1_000,
                        'drift_prob':0.01,
-                       'dim': 5}
+                       'dim': 1}
 else:
     synthetic_param = None
 

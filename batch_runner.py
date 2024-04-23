@@ -7,7 +7,7 @@ import sys
 # List of dataset names
 # wandb_enable = True
 datasets = ['Hyper-A', 'Hyper-I', 'Hyper-G', 'Hyper-LN', 'Hyper-RW', 'Hyper-GU']
-datasets = ['Hyper-A']
+# datasets = ['Hyper-A']
 # datasets = [
 #             'Bike (daily)',
 #             'Bike (hourly)',

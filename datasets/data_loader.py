@@ -12,7 +12,7 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
     #     synthetic_param['noise_var']=0.2
     #     synthetic_param['drift_probability']=0.05
 
-    
+    hyper_w = None
     trip_ids = None
 
     # if dataset_name == 'Teconer':
@@ -137,37 +137,44 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         stream = stream_generator.hyper_abrupt(synthetic_param, seed=seed)
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])
+        data_w = np.array([item[2] for item in stream])
 
     if dataset_name == 'Hyper-I':
         stream = stream_generator.hyper_incremental(synthetic_param, seed=seed)
         data_X = np.array([item[0] for item in stream])
-        data_y = np.array([item[1] for item in stream])  
+        data_y = np.array([item[1] for item in stream])
+        data_w = np.array([item[2] for item in stream])
 
     if dataset_name == 'Hyper-G':
         stream = stream_generator.hyper_gradual(synthetic_param, seed=seed)
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])
+        data_w = np.array([item[2] for item in stream])
 
     if dataset_name == 'Hyper-GU':
         stream = stream_generator.hyper_gaussian(synthetic_param, seed=seed)
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])
+        data_w = np.array([item[2] for item in stream])
 
     if dataset_name == 'Hyper-LN':
         stream = stream_generator.hyper_linear(synthetic_param, seed=seed)
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])
+        data_w = np.array([item[2] for item in stream])
 
     if dataset_name == 'Hyper-RW':
         stream = stream_generator.hyper_random_walk(synthetic_param, seed=seed)
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])
+        data_w = np.array([item[2] for item in stream])
 
     if dataset_name == 'SimpleHeterogeneous':
         stream = stream_generator.simple_heterogeneous(synthetic_param, seed=seed)
         # print(stream[0])
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])
+        # data_w = np.array([item[2] for item in stream])
 
     # if 'Hyper' in dataset_name:
         # include time (index) as a feature
@@ -182,5 +189,5 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
     #     return data_X, data_y, scaler_X, scaler_y, trip_ids
     # else:
     #     return data_X, data_y, scaler_X, scaler_y
-    return data_X, data_y, scaler_X, scaler_y
+    return data_X, data_y, scaler_X, scaler_y, hyper_w
 
