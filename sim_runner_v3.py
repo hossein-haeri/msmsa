@@ -85,9 +85,14 @@ def run(model, online_model, dataset_name, synthetic_param, seed=None):
 
         stream_bar.set_postfix(MemSize=num_train_samples, Ratio=(num_train_samples+1)/(k+1))
         
-        wandb.log({'run_mae': np.abs(y - y_pred)})
+        
         if 'Hyper' in dataset_name:
-            wandb.log({'w': hyper_w})
+            wandb.log({
+                    'run_mae': np.abs(y - y_pred),
+                    'w': hyper_w
+                    })
+        else:
+            wandb.log({'run_mae': np.abs(y - y_pred)})
         
 
     logger.sclaer_y = scaler_y
