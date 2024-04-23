@@ -85,6 +85,7 @@ def run(model, online_model, dataset_name, synthetic_param, seed=None):
 
         stream_bar.set_postfix(MemSize=num_train_samples, Ratio=(num_train_samples+1)/(k+1))
         
+        wandb.log({'run_mae': np.abs(y - y_pred)})
         
 
     logger.sclaer_y = scaler_y
@@ -113,43 +114,18 @@ if len(sys.argv) > 5:
     wandb_run.tags = sys.argv[5:]
 
 
-# ################ REAL DATA #################
-# dataset_name = 'Bike (daily)'
-
-            # 'Bike (daily)',
-            # 'Bike (hourly)',
-            # 'Household energy',
-            # 'Melbourne housing',
-            # 'Air quality',
-            # 'Friction',
-            # 'NYC taxi',
-#             # 'Teconer_100K',
-            # 'Teconer_10K'
-
-
-
-############# SYNTHETIC DATA #################
-# dataset_name = 'Hyper-A'
-            # 'Hyper-A',
-            # 'Hyper-I',
-            # 'Hyper-G',
-            # 'Hyper-LN',
-            # 'Hyper-RW',
-            # 'Hyper-GU',
-            # 'SimpleHeterogeneous',
-
 
 if 'Hyper' in dataset_name:
-    synthetic_param = {'noise_var': 0.01, # [0, 1, 2, 3, 4, 5]
+    synthetic_param = {'noise_var': 0.1, # [0, 1, 2, 3, 4, 5]
                        'stream_size': 1_000,
                        'drift_prob':0.01,
-                       'dim': 10}
+                       'dim': 5}
 else:
     synthetic_param = None
 
 
 if base_learner_name == 'RF':
-    base_learner = learning_models.RandomForest(n_estimators=10, n_jobs=-1)
+    base_learner = learning_models.RandomForest(n_estimators=50, bootstrap=True, n_jobs=-1, max_depth=7)
 elif base_learner_name == 'LNR':
     base_learner = learning_models.Linear()
 elif base_learner_name == 'DT':
@@ -182,35 +158,13 @@ elif online_model_name == 'Naive':
 elif online_model_name == 'AUE':
     online_model = aue.AUE(min_memory_len=10, batch_size=20)
 elif online_model_name == 'DTH':
-    online_model = dth.DTH()
+    online_model = dth.DTH(epsilon=.99)
 else:
     print('Online learner not found')
 
 
 
-            # dth.DTH(    epsilon=0.9,
-            #             num_sub_learners=0,
-            #             min_new_samples_for_base_learner_update=1,
-            #             min_new_samples_for_pruining=1,
-            #             multi_threading_sub_learners=False,
-            #             pruning_disabled=False,
-            #             num_pruning_threads=1,
-            #             max_elimination=100,
-            #             use_sublearners_as_baselearner=False,
-            #             max_investigated_samples = 1000),
-            # msmsa_plus.MSMSA_plus(min_memory_len=10, num_anchors=50, lam=.8, max_horizon=1000, continuous_model_fit=True),
-            # aue.AUE(min_memory_len=10, batch_size=20),
-            # msmsa.MSMSA(min_memory_len=10, lam=.8, max_horizon=1000, continuous_model_fit=True),
-            # davar_reg.DAVAR(lam=10),
-            # kswin_reg.KSWIN(alpha=0.005, window_size=100, stat_size=30, min_memory_len=10),
-            # adwin_reg.ADWIN(delta=0.002),
-            # ddm_reg.DDM(alpha_w=2, alpha_d=3),
-            # ph_reg.PH(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10),
-            # naive_reg.Naive()
-            
-
 online_model.base_learner = base_learner
-
 
 
 log = run(

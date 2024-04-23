@@ -103,11 +103,11 @@ class DecissionTree:
 
 
 class RandomForest:
-    def __init__(self, n_estimators=100, max_depth=5, n_jobs=-1):
+    def __init__(self, n_estimators=100, max_depth=5, n_jobs=-1, bootstrap=True):
         self.n_estimators = n_estimators
         self.max_depth = max_depth
         self.n_jobs = n_jobs
-        self.model = RandomForestRegressor(n_estimators=self.n_estimators, max_depth=self.max_depth)
+        self.model = RandomForestRegressor(n_estimators=self.n_estimators, max_depth=self.max_depth, n_jobs=self.n_jobs, bootstrap=bootstrap)
         self.y_pred_history = []
         self.error_history = []
 

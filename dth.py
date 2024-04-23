@@ -17,10 +17,10 @@ import learning_models
 class DTH:
     ''''' Time needs to be the first feature in the input data. '''''
     def __init__(self, 
-                 epsilon=0.9,
+                 epsilon=0.99,
                  ):
         ### hyper-parameters
-        self.base_learner = learning_models.RandomForest(n_estimators=100, max_depth=7, n_jobs=-1)
+        self.base_learner = None
         self.epsilon = epsilon
 
         #### initialization
@@ -61,22 +61,34 @@ class DTH:
         mu_o, sigma_o = self.predict_bulk(X_with_t_o)
         mu_c, sigma_c = self.predict_bulk(X_with_t_c)
 
-        sigma_o = np.maximum(sigma_o, 0.00001)
-        sigma_c = np.maximum(sigma_c, 0.00001)
+        sigma_o = np.maximum(sigma_o, 1e-6)
+        sigma_c = np.maximum(sigma_c, 1e-6)
 
-        prob_y_current  = np.exp(-0.5 * ((y - mu_c) / sigma_c)**2) / (sigma_c)
-        prob_y_original = np.exp(-0.5 * ((y - mu_o) / sigma_o)**2) / (sigma_o)
+        prob_y_current  = np.exp(-0.5 * ((y - mu_c)/sigma_c)**2) / (sigma_c)
+        prob_y_original = np.exp(-0.5 * ((y - mu_o)/sigma_o)**2) / (sigma_o)
 
-        # prior = np.array([sample.expiration_probability for sample in self.memory])
-        # prior = 0.5
-        prob_original_given_y = ((prob_y_original * prior) /
-                                    (prob_y_original * prior + prob_y_current * (1 - prior)))
+        prob_y_current = np.maximum(prob_y_current, 1e-6)
+        prob_y_original = np.maximum(prob_y_original, 1e-6)
         
+        # prior = np.array([sample.expiration_probability for sample in self.memory])
+        # prior = np.minimum(prior, self.epsilon)
+        # prior = np.maximum(prior, 1 - self.epsilon)
+        # print('prior:', prior)
+        # print('prob_y_current:', prob_y_current)
+        # print('prob_y_original:', prob_y_original)
 
+        prior = 0.5
+        prob_original_given_y = (prob_y_original * prior) / (prob_y_original * prior + prob_y_current * (1 - prior))
+        # print('prob_y_current:', prob_original_given_y)
+        num_removed = 0
         for i, sample in enumerate(self.memory):
             sample.expiration_probability = prob_original_given_y[i]
-            if prob_original_given_y[i] > self.epsilon:
-                self.memory.pop(i) 
+            if prob_original_given_y[i] > self.epsilon and sigma_c[i] < np.mean(sigma_c):
+                # if num_removed > 5:
+                #     self.fit_base_learner()
+                #     num_removed = 0
+                self.memory.pop(i)
+                num_removed += 1
 
 
     def samples2xy(self, samples, at_current_time=False):

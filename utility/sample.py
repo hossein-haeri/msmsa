@@ -6,7 +6,7 @@ class Sample:
         self.X = X
         self.y = y
         self.t = t
-        self.expiration_probability = 0.1
+        self.expiration_probability = 0.5
 
         self.mu_o = None
         self.mu_c = None
