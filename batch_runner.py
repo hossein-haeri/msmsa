@@ -33,8 +33,8 @@ repetitions = 10
 # Function to run the command silently
 def run_simulation(dataset, method, base_learner, seed):
     command = f"python sim_runner_v3.py {dataset} {method} {base_learner} {seed}"
-    subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    # subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
+    # subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
 
     print(f"Executed: {dataset}, {method}, {base_learner}, seed:{seed}")
 
