@@ -189,5 +189,5 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
     #     return data_X, data_y, scaler_X, scaler_y, trip_ids
     # else:
     #     return data_X, data_y, scaler_X, scaler_y
-    return data_X, data_y, scaler_X, scaler_y, hyper_w
+    return data_X, data_y, scaler_X, scaler_y, data_w
 
