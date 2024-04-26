@@ -1,18 +1,14 @@
 import numpy as np
+from utility.sample import Memory
 
-class Naive:
+class Naive(Memory):
     def __init__(self):
-        self.base_learner = None
-        self.base_learner_is_fitted = False
-        self.memory = []
+        super().__init__()
         self.method_name = 'Naive'
         self.t = 0
         self.hyperparams = {
             }
-
-    def add_sample(self, X, y):
-        self.memory.append((X, y))
-        
+   
     def detect(self, error):
         self.t += 1
         
@@ -25,19 +21,6 @@ class Naive:
     def reset_detector(self):
         self.__init__(self)
         
-
-    def get_recent_data(self):
-        return self.memory
-    
-    def get_val_horizon(self):
-        return len(self.memory)
-
-    # def update_(self, model, error):
-    #     self.detect(error)
-    #     model.reset()
-    #     model.fit(self.memory)
-    #     return model, self.t
-
     def update_online_model(self, X, y):
         self.add_sample(X, y)
         if self.base_learner_is_fitted:
@@ -46,20 +29,8 @@ class Naive:
             y_hat = 0
         error = self.mean_absoulte_error(y, y_hat)
         self.detect(error)
-        self.base_learner.reset()
-        self.base_learner.fit(self.memory)
-        if len(self.memory) > 1:
+        # self.base_learner.reset()
+        # self.base_learner.model.fit(self.get_X_with_time(), self.get_y())
+        self.fit_to_memory()
+        if len(self.samples) > 1:
             self.base_learner_is_fitted = True
-
-    
-    def predict_online_model(self, X):
-        if self.base_learner_is_fitted:
-            return self.base_learner.predict(X)
-        elif len(self.memory) > 0:
-            return [self.memory[-1][1]]
-        else:
-            return [0]
-    
-    
-    def mean_absoulte_error(self, y_true, y_pred):
-        return np.mean(np.absolute(y_true - y_pred))

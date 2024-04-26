@@ -14,13 +14,13 @@ def hyper_abrupt(systhetic_param, seed=None):
     stream = []
     # initialize and normalize w
     w = np.random.normal(0,scale=1,size=hyperplane_dimension)
-    w = w / np.linalg.norm(w)
+    # w = w / np.linalg.norm(w)
     for k in range(stream_size):
         if np.random.uniform() < drift_probability and drift_probability != -1:
             w = np.random.normal(0, scale=1, size=hyperplane_dimension)
-            w = w / np.linalg.norm(w)
+            # w = w / np.linalg.norm(w)
         if drift_probability == -1 and k == int(stream_size/2):
-            w = w / np.linalg.norm(w)
+            # w = w / np.linalg.norm(w)
             w = np.random.normal(0, scale=1, size=hyperplane_dimension)
         # draw uniform random samples 
         X = np.random.uniform(-10, 10, hyperplane_dimension)
@@ -45,8 +45,8 @@ def hyper_gaussian(systhetic_param, smoothness=50, seed=None):
     for d in range(hyperplane_dimension):
         white_noise = np.random.normal(0,10,stream_size)
         w_list[:,d] = gaussian_filter(white_noise, sigma=smoothness)
-    for k in range(stream_size):
-        w_list[k,:] = w_list[k,:] / np.linalg.norm(w_list[k,:])
+    # for k in range(stream_size):
+    #     w_list[k,:] = w_list[k,:] / np.linalg.norm(w_list[k,:])
     for k in range(stream_size):
         w = w_list[k,:]
         # draw uniform random samples 
@@ -69,10 +69,10 @@ def hyper_random_walk(systhetic_param, random_walk_noise=0.01, seed=None):
     stream = []
     # initialize and normalize w
     w = np.random.normal(0,scale=1,size=hyperplane_dimension)
-    w = w / np.linalg.norm(w)
+    # w = w / np.linalg.norm(w)
     for k in range(stream_size):
         w = w + np.random.normal(0,scale=random_walk_noise, size=hyperplane_dimension)
-        w = w / np.linalg.norm(w)
+        # w = w / np.linalg.norm(w)
         # draw uniform random samples 
         X = np.random.uniform(-10, 10, hyperplane_dimension)
         # create the target parameter using the features
@@ -92,14 +92,14 @@ def hyper_gradual(systhetic_param, drift_duration_min=10, drift_duration_max=200
     stream = []
     # initialize and normalize w
     w = np.random.normal(0,scale=1,size=hyperplane_dimension)
-    w = w / np.linalg.norm(w)
+    # w = w / np.linalg.norm(w)
     s = None
     for k in range(stream_size):
         if s is None and np.random.rand() < drift_probability:
                 s = 0
                 w_old = w
                 w_new = np.random.normal(0,scale=1,size=hyperplane_dimension)
-                w_new = w_new / np.linalg.norm(w_new)
+                # w_new = w_new / np.linalg.norm(w_new)
                 drift_duration = np.random.uniform(drift_duration_min, drift_duration_max)
         elif s is not None:
             if 0 <= s < 1:
@@ -131,19 +131,19 @@ def hyper_incremental(systhetic_param, drift_duration_min=10, drift_duration_max
     stream = []
     # initialize and normalize w
     w = np.random.normal(0,scale=1,size=hyperplane_dimension)
-    w = w / np.linalg.norm(w)
+    # w = w / np.linalg.norm(w)
     s = None
     for k in range(stream_size):
         if s is None and np.random.uniform() < drift_probability:
                 s = 0
                 w_old = w
                 w_new = np.random.normal(0,scale=1,size=hyperplane_dimension)
-                w_new = w_new / np.linalg.norm(w_new)
+                # w_new = w_new / np.linalg.norm(w_new)
                 drift_duration = np.random.uniform(drift_duration_min, drift_duration_max)
         elif s is not None:
             if 0 <= s < 1:
                 w = (1-s)*w_old + s*w_new
-                w = w / np.linalg.norm(w)
+                # w = w / np.linalg.norm(w)
                 s = s + 1/drift_duration
             elif s >= 1:
                 w = w_new
@@ -166,15 +166,16 @@ def hyper_linear(synthetic_param, seed=None):
     hyperplane_dimension = synthetic_param['dim']
     stream = []
     # initialize and normalize w
-    w = np.random.normal(0,scale=1,size=hyperplane_dimension)
-    w = w / np.linalg.norm(w)
+    w_initial = np.random.normal(0,scale=1,size=hyperplane_dimension)
+    # w = w / np.linalg.norm(w)
     for k in range(stream_size):
         if k == 0:
-                random_direction = np.random.normal(0,scale=0.01, size=hyperplane_dimension)
-                random_direction = random_direction / np.linalg.norm(random_direction)
-        else:
-            w = w + (1/stream_size)*(random_direction - w)
-            w = w / np.linalg.norm(w)
+                w_final = np.random.normal(0,scale=1, size=hyperplane_dimension)
+                # random_direction = random_direction / np.linalg.norm(random_direction)
+        # else:
+        s = k/stream_size
+        w = s * w_initial + (1-s) * w_final
+            # w = w / np.linalg.norm(w)
         # draw uniform random samples 
         X = np.random.uniform(-10, 10, hyperplane_dimension)
         # create the target parameter using the features

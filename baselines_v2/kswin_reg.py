@@ -1,15 +1,15 @@
 import numpy as np
-import copy
+# import copy
+from utility.sample import Memory
 # from skmultiflow.drift_detection import KSWIN as KolmogorovSmirnovWIN
 
 from river.drift import KSWIN as KolmogorovSmirnovWIN
 
-class KSWIN(KolmogorovSmirnovWIN):
+class KSWIN(KolmogorovSmirnovWIN, Memory):
     def __init__(self,alpha=0.005, window_size=100, stat_size=30, min_memory_len=10):
         super().__init__(alpha=alpha, window_size=window_size, stat_size=stat_size)
-        self.base_learner = None
-        self.base_learner_is_fitted = False
-        self.memory = []
+        Memory.__init__(self)
+
         self.change_flag = False
         self.change_flag_history = []
         self.method_name = 'KSWIN'
@@ -20,16 +20,7 @@ class KSWIN(KolmogorovSmirnovWIN):
                             'min_memory_len':min_memory_len
                             }
 
-    def add_sample(self, X, y):
-        # check if y is a list (or np.array) or a single value
-        if len([y]) == 1:
-            self.memory.append((X, y))
-        elif len([y]) > 1:
-            for i in range(len(y)):
-                self.memory.append((X[i], y[i]))
-
     def detect(self, error):
-        # self.add_element(error)
         self.update(error)
         self.change_flag = self.drift_detected
         self.update_memory()
@@ -37,50 +28,27 @@ class KSWIN(KolmogorovSmirnovWIN):
 
     def update_memory(self):
         if self.change_flag:
-            self.memory = self.memory[-self.min_memory_len:]
-
-    def get_recent_data(self):
-        return self.memory
-    
-    def get_val_horizon(self):
-        return len(self.memory)
+            self.samples = self.samples[-self.min_memory_len:]
 
     def reset_detector(self):
         self.reset()
-        self.memory = []
+        self.samples = []
         self.change_flag = False
         self.change_flag_history = []
-
-    # def update_(self, model, error):
-    #     self.detect(error)
-    #     # model_ = copy.copy(model)
-
-    #     model.reset()
-    #     model.fit(self.memory)
-    #     return model, len(self.memory)
     
     def update_online_model(self, X, y):
         self.add_sample(X, y)
+
         if self.base_learner_is_fitted:
             y_hat = self.predict_online_model(X)
         else:
             y_hat = 0
         error = self.mean_absoulte_error(y, y_hat)
         self.detect(error)
-        self.base_learner.reset()
-        self.base_learner.fit(self.memory)
-        if len(self.memory) > 1:
+        # self.base_learner.reset()
+        # self.base_learner.model.fit(self.get_X_with_time(), self.get_y())
+        self.fit_to_memory()
+        if len(self.samples) > 1:
             self.base_learner_is_fitted = True
             
     
-    def predict_online_model(self, X):
-        if self.base_learner_is_fitted:
-            return self.base_learner.predict(X)
-        elif len(self.memory) > 0:
-            return [self.memory[-1][1]]
-        else:
-            return [0]
-    
-    
-    def mean_absoulte_error(self, y_true, y_pred):
-        return np.mean(np.absolute(y_true - y_pred))

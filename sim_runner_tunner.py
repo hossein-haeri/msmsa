@@ -53,22 +53,31 @@ def run(model, online_model, dataset_name, synthetic_param, seed=None):
     stream_bar = tqdm(zip(data_X, data_y), leave=False, disable=False, total=len(data_y))
 
     for k, (X, y) in enumerate(stream_bar):
-
+    # for k, (X, y) in enumerate(stream_bar(zip(data_X, data_y),leave=False, disable=False, total=len(data_y))):
         X_with_time = np.append(k/len(data_y),X).reshape(1,-1)
 
+        # PREDICTION
         y_pred = online_model.predict_online_model(X_with_time)[0]
 
-        online_model.update_online_model(X_with_time, y)
-    
         
+        if 'DTH' in online_model.method_name:
+            online_model.add_sample(X_with_time, y)
+            online_model.update_online_model()
+        else:
+            online_model.update_online_model(X_with_time, y)
+        
+        
+        num_train_samples = len(online_model.samples)
+
         # retransform y and y_pred back to original scale
         y = rescale(y, scaler_y)
         y_pred = rescale(y_pred, scaler_y)
 
-        num_train_samples = len(online_model.samples)
         logger.log(y, y_pred, num_train_samples=num_train_samples)
         logger.X.append(X)
+
         stream_bar.set_postfix(MemSize=num_train_samples, Ratio=(num_train_samples+1)/(k+1))
+        # print(hyper_w.squeeze())
         if wandb_log:
             if 'Hyper' in dataset_name:
                 wandb.log({
@@ -87,6 +96,8 @@ def run(model, online_model, dataset_name, synthetic_param, seed=None):
     logger.summary['base_learner_name'] = type(model).__name__
     logger.synthetic_param = synthetic_param
     logger.summary['seed'] = seed
+    logger.summary['epsilon'] = online_model.epsilon
+    logger.summary['prior'] = online_model.prior
     if 'MSMSA+' in online_model.method_name:
         logger.anchors = online_model.anchors
     logger.finish()
@@ -94,21 +105,18 @@ def run(model, online_model, dataset_name, synthetic_param, seed=None):
 
 
 
-wandb_log = False
+wandb_log = True
 
 if wandb_log:
     wandb_run = wandb.init(project='stream_learning', entity='haeri-hsn')
 
 
-
-# get base_learner_name from the argument of the script
-dataset_name = sys.argv[1]
-online_model_name = sys.argv[2]
-base_learner_name = sys.argv[3]
-seed = sys.argv[4]
-# if additional argument is given get it as the tag for wandb
-if len(sys.argv) > 5:
-    wandb_run.tags = sys.argv[5:]
+base_learner_name = 'RF'
+online_model_name = 'DTH'
+dataset_name = 'Hyper-A'
+epsilon = float(sys.argv[1])
+prior = float(sys.argv[2])
+seed = int(sys.argv[3])
 
 
 
@@ -155,7 +163,7 @@ elif online_model_name == 'Naive':
 elif online_model_name == 'AUE':
     online_model = aue.AUE(min_memory_len=10, batch_size=20)
 elif online_model_name == 'DTH':
-    online_model = dth.DTH(epsilon=.99)
+    online_model = dth.DTH(epsilon=epsilon, prior=prior)
 else:
     print('Online learner not found')
 
@@ -189,10 +197,6 @@ if wandb_log:
     # log into wandb
     wandb.log(log.summary)
     wandb.finish()
-
-# print('done')
-# print(log.summary)
-
 
 
 

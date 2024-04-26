@@ -1,12 +1,14 @@
 import numpy as np
+from utility.sample import Memory
 
-class DDM:
+class DDM(Memory):
     def __init__(self, alpha_w, alpha_d, min_memory_len=10):
-        self.base_learner = None
-        self.base_learner_is_fitted = False
+        super().__init__()
+        # self.base_learner = None
+        # self.base_learner_is_fitted = False
         self.alpha_w = alpha_w
         self.alpha_d = alpha_d
-        self.memory = []
+        # self.memory = []
         self.error_history = []
         self.warning_flag_history = []
         self.change_flag_history = []
@@ -27,8 +29,8 @@ class DDM:
                             'min_memory_len': min_memory_len,
                     }
         
-    def add_sample(self, X, y):
-        self.memory.append((X, y))
+    # def add_sample(self, X, y):
+    #     self.memory.append((X, y))
         
     # detect potential changes given a new prediction error
     def detect(self, error):
@@ -74,9 +76,9 @@ class DDM:
     def update_memory(self):
         if self.change_flag:
             if (self.warning_t is None) or ((self.t - self.warning_t) < self.min_memory_len): ### This means change is detected withough any prior warning
-                self.memory = self.memory[-self.min_memory_len:]
+                self.samples = self.samples[-self.min_memory_len:]
             else:
-                self.memory = self.memory[self.warning_t:]
+                self.samples = self.samples[self.warning_t:]
     
     
     def reset(self):
@@ -90,11 +92,11 @@ class DDM:
     def reset_detector(self):
         self.__init__(self.alpha_w, self.alpha_d)
 
-    def get_recent_data(self):
-        return self.memory
+    # def get_recent_data(self):
+    #     return self.memory
 
-    def get_val_horizon(self):
-        return len(self.memory)
+    # def get_val_horizon(self):
+    #     return len(self.memory)
     # def update_(self, model, error):
     #     self.detect(error)
     #     model.reset()
@@ -109,8 +111,10 @@ class DDM:
             y_hat = 0
         error = self.mean_absoulte_error(y, y_hat)
         self.detect(error)
-        self.base_learner.reset()
-        self.base_learner.fit(self.memory)
+        # self.
+        # self.base_learner.reset()
+        # self.base_learner.fit(self.memory)
+        self.fit_to_memory()
         if len(self.memory) > 1:
             self.base_learner_is_fitted = True
         return None

@@ -1,62 +1,57 @@
 
 import numpy as np
-import copy
-import sys
-import random
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from multiprocessing import Pool
-import torch
-import torch.nn as nn
+# import copy
+# import sys
+# import random
+# from concurrent.futures import ThreadPoolExecutor, as_completed
+# from concurrent.futures import ProcessPoolExecutor, as_completed
+# from multiprocessing import Pool
+# import torch
+# import torch.nn as nn
 
-from utility.sample import Sample
-import learning_models
+from utility.sample import Sample, Memory
+# import learning_models
 
 
         
-class DTH:
+class DTH(Memory):
     ''''' Time needs to be the first feature in the input data. '''''
     def __init__(self, 
-                 epsilon=0.99,
+                 epsilon=0.8,
+                 prior=0.5,
                  ):
+        super().__init__()
+
         ### hyper-parameters
-        self.base_learner = None
         self.epsilon = epsilon
+        self.prior = prior
 
         #### initialization
         self.method_name = 'DTH'
-        self.base_learner_is_fitted = False
-        self.memory = []
         self.sample_id_counter = 0
         self.current_time = 0
         self.first_time = True
 
-    def add_sample(self,X, y, t):
-        if len([y]) == 1:
-            if self.current_time < t:
-                    self.current_time = t
-            self.memory.append(Sample(X[0], y, t, self.sample_id_counter))
-            self.sample_id_counter += 1
-        else:
-            for i in range(len(y)):
-                self.add_sample(X[i], y[i], t[i])
 
-    def predict_online_model(self, X):
-        return self.base_learner.predict(X)
 
-    def update_online_model(self):
+    def update_online_model(self, X, y):
+        self.add_sample(X, y)
         self.fit_base_learner()
         self.prune_memory()
 
     def fit_base_learner(self):
-            X, y = self.samples2xy(self.memory)
-            self.base_learner.model.fit(X, y)
-            self.base_learner_is_fitted = True
+            # X = self.get_X_with_time()
+            # y = self.get_y()
+            # self.base_learner.model.fit(X, y)
+            # self.base_learner_is_fitted = True
+            self.fit_to_memory()
 
 
     def prune_memory(self):
-        X_with_t_o, y = self.samples2xy(self.memory, at_current_time=False)
-        X_with_t_c, y = self.samples2xy(self.memory, at_current_time=True)
+
+        X_with_t_o = self.get_X_with_time()
+        X_with_t_c = self.get_X_with_current_time()
+        y = self.get_y()
 
         mu_o, sigma_o = self.predict_bulk(X_with_t_o)
         mu_c, sigma_c = self.predict_bulk(X_with_t_c)
@@ -70,90 +65,32 @@ class DTH:
         prob_y_current = np.maximum(prob_y_current, 1e-6)
         prob_y_original = np.maximum(prob_y_original, 1e-6)
         
-        # prior = np.array([sample.expiration_probability for sample in self.memory])
-        # prior = np.minimum(prior, self.epsilon)
-        # prior = np.maximum(prior, 1 - self.epsilon)
+        prior = np.array([sample.expiration_probability for sample in self.samples])
+        prior = np.minimum(prior, 0.9)
+        prior = np.maximum(prior, 0.1)
+
         # print('prior:', prior)
         # print('prob_y_current:', prob_y_current)
         # print('prob_y_original:', prob_y_original)
 
-        prior = 0.5
+        prior = self.prior
         prob_original_given_y = (prob_y_original * prior) / (prob_y_original * prior + prob_y_current * (1 - prior))
         # print('prob_y_current:', prob_original_given_y)
         num_removed = 0
-        for i, sample in enumerate(self.memory):
+        for i, sample in enumerate(self.samples):
             sample.expiration_probability = prob_original_given_y[i]
-            if prob_original_given_y[i] > self.epsilon and sigma_c[i] < np.mean(sigma_c):
-                # if num_removed > 5:
-                #     self.fit_base_learner()
-                #     num_removed = 0
-                self.memory.pop(i)
+            # if prob_original_given_y[i] > self.epsilon and sigma_c[i] < np.mean(sigma_c):
+            if prob_original_given_y[i] > self.epsilon:
+                if num_removed > 5:
+                    self.fit_base_learner()
+                    num_removed = 0
+                # print('removing:', i, prob_original_given_y[i], sigma_c[i])
+                self.samples.pop(i)
                 num_removed += 1
 
-
-    def samples2xy(self, samples, at_current_time=False):
-        # print('sample2xy:', samples[0].X)
-        if at_current_time:
-            # X = np.append(self.current_time, [sample.X for sample in samples])
-            X = np.array([sample.X_with_current_time(self.current_time) for sample in samples])
-            # print('at current', X)
-        else:
-            X = np.array([sample.X_with_time() for sample in samples])
-            # print('at original',X)
-        y = np.array([sample.y for sample in samples])  
-        # print('X', X)
-        # print('y.shape:', y.shape)
-        return X, y
     
     def predict_bulk(self, X_batch_with_time):
         if self.base_learner.model.__class__.__name__ == 'RandomForestRegressor':
             return self.base_learner.get_sub_predictions(X_batch_with_time)
-    
-
-    def get_prediction_at(self, X, t):
-        return self.base_learner.get_sub_predictions([np.append(X, t)])
-
-
-    def predict_online_model(self, X_with_time):
-        if self.base_learner_is_fitted:
-            # X_with_time = np.append(t, X)
-            # print('X_with_time:', X_with_time)
-            return self.base_learner.model.predict(X_with_time)
-        else:
-            return [0]
-        # if self.use_sublearners_as_baselearner:
-        #     if self.base_learner_is_fitted:
-        #         return self.get_prediction_at(X, self.current_time)[0]
-        #     else:
-        #         if len(self.memory) > self.num_sub_learners:
-        #             # X = np.array([np.append(sample[0],sample[2]) for sample in self.memory])
-        #             # y = np.array([sample[1] for sample in self.memory])
-        #             X = np.array([sample.X_with_time() for sample in self.memory])
-        #             y = np.array([sample.y for sample in self.memory])
-        #             self.base_learner.model.fit(X, y)
-        #             self.base_learner_is_fitted = True
-        #             return self.predict_online_model(X, t)
-        #         elif len(self.memory) > 0:
-        #             # return mean of the y values in the memory
-        #             return np.mean([sample.y for sample in self.memory])
-        #         else:
-        #             return [0]
-        # else: # use a separate base_learner
-        #     if self.base_learner_is_fitted:
-        #         X_time_included = np.append(X, t)
-        #         return self.base_learner.predict(X_time_included)
-        #     elif len(self.memory) > 0:
-        #         # X_time_included = np.append(X, t)
-        #         # X, y = self.samples2xy(self.memory)
-        #         X_time_included = np.array([np.append(sample[0],sample[2]) for sample in self.memory])
-        #         y = np.array([sample[1] for sample in self.memory])
-        #         self.base_learner.model.fit(X_time_included, y)
-        #         self.base_learner_is_fitted = True
-        #         return self.predict_online_model(X, t)
-        #     else: # raise error 'no model is fitted'
-        #         return [0]
-    
-
-
 
 
