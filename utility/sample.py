@@ -32,11 +32,6 @@ class Memory:
 
 
     def add_sample(self,X_with_time, y):
-        # print(X_with_time)
-        # print(y)
-        
-        # print(y.shape)
-        # if len([y]) == 1:
         X_with_time = np.array(X_with_time).squeeze()
         y = np.array(y).squeeze()
         t = X_with_time[0]
@@ -54,7 +49,6 @@ class Memory:
     def get_X(self):
         if len(self.samples) == 0:
             return np.array([])
-            print('No samples in memory')
         return np.array([sample.X for sample in self.samples])
     
     def get_y(self):
@@ -68,13 +62,11 @@ class Memory:
         return np.array([sample.t for sample in self.samples])
     
     def get_X_with_time(self):
-        # return X_with_time as [t, X]
         if len(self.samples) == 0:
             return np.array([])
         return np.array([np.append(sample.t, sample.X) for sample in self.samples])
 
     def get_X_with_current_time(self):
-        # return X_with_time as [t, X]
         if len(self.samples) == 0:
             return np.array([])
         return np.array([np.append(self.current_time, sample.X) for sample in self.samples])
@@ -98,3 +90,6 @@ class Memory:
             print('No samples in memory to fit')
             return
         self.base_learner.model.fit(self.get_X_with_time(), self.get_y())
+        self.base_learner_is_fitted = True
+
+

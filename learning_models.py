@@ -62,9 +62,19 @@ class KNN:
         self.y_pred_history.append(pred)
         return pred
 
-    def get_parameters(self):
-        return self.model.coef_+self.model.intercept_
+    def get_sub_predictions(self, X):
+        # tree_predictions =  [tree.predict(X) for tree in self.model.estimators_]
+        neighbors_distances, neighbors_indices = self.model.kneighbors(X)
+        means = []
+        std_devs = []
+        for indices in neighbors_indices:
+            neighbor_targets = y[indices]
+            means.append(np.mean(neighbor_targets))
+            std_devs.append(np.std(neighbor_targets))
+        return np.mean(predictions, axis=0), np.std(predictions, axis=0)
+        
     
+
     def reset(self):
         self.__init__()
 

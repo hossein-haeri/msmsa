@@ -111,17 +111,19 @@ class Logger:
         
     
     def finish(self):
-        self.summary['average_training_samples'] = np.mean(self.num_train_samples_list)
-        self.summary['mae'] = np.mean(self.errors)
+        self.summary['mean_memory_size'] = np.mean(self.num_train_samples_list)
+        self.summary['MAE'] = np.mean(self.errors)
         # add RMSE to the summary dictionary
-        self.summary['rmse'] = np.sqrt(np.mean(np.square(self.errors)))
+        self.summary['RMSE'] = np.sqrt(np.mean(np.square(self.errors)))
         # add MAPE to the summary dictionary
-        self.summary['mape'] = np.mean(np.abs(self.errors / np.array(self.y)))
+        self.summary['MAPE'] = np.mean(np.abs(np.array(self.errors) / np.array(self.y)))
+        # add R-squared to the summary dictionary
+        self.summary['R2'] = 1 - np.sum(np.square(self.errors)) / np.sum(np.square(np.array(self.y) - np.mean(self.y)))
 
 
-        # assuming synthetic_param is a dictionary, concat it to the summary dictionary
-        if 'Hyper' in self.summary['dataset_name']:
-            self.summary = {**self.summary, **self.synthetic_param}
+        # # assuming synthetic_param is a dictionary, concat it to the summary dictionary
+        # if 'Hyper' in self.summary['dataset_name']:
+        #     self.summary = {**self.summary, **self.synthetic_param}
         
 
         

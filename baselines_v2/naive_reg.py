@@ -32,5 +32,5 @@ class Naive(Memory):
         # self.base_learner.reset()
         # self.base_learner.model.fit(self.get_X_with_time(), self.get_y())
         self.fit_to_memory()
-        if len(self.samples) > 1:
-            self.base_learner_is_fitted = True
+        # if len(self.samples) > 1:
+        #     self.base_learner_is_fitted = True

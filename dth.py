@@ -9,7 +9,8 @@ import numpy as np
 # import torch
 # import torch.nn as nn
 
-from utility.sample import Sample, Memory
+# from utility.sample import Sample, Memory
+from utility.memory import Memory
 # import learning_models
 
 
@@ -19,13 +20,17 @@ class DTH(Memory):
     def __init__(self, 
                  epsilon=0.8,
                  prior=0.5,
+                 max_num_samples=None,
+                 num_features=None,
                  ):
-        super().__init__()
+        super().__init__(max_num_samples=max_num_samples, num_features=num_features)
 
         ### hyper-parameters
         self.epsilon = epsilon
         self.prior = prior
-
+        self.hyperparams = {'epsilon':epsilon,
+                        'prior':prior,
+                          }
         #### initialization
         self.method_name = 'DTH'
         self.sample_id_counter = 0
@@ -33,10 +38,10 @@ class DTH(Memory):
         self.first_time = True
 
 
-
     def update_online_model(self, X, y):
         self.add_sample(X, y)
         self.fit_base_learner()
+        self.first_time = False
         self.prune_memory()
 
     def fit_base_learner(self):
@@ -45,13 +50,13 @@ class DTH(Memory):
             # self.base_learner.model.fit(X, y)
             # self.base_learner_is_fitted = True
             self.fit_to_memory()
-
-
+            
     def prune_memory(self):
 
         X_with_t_o = self.get_X_with_time()
         X_with_t_c = self.get_X_with_current_time()
         y = self.get_y()
+
 
         mu_o, sigma_o = self.predict_bulk(X_with_t_o)
         mu_c, sigma_c = self.predict_bulk(X_with_t_c)
@@ -65,9 +70,9 @@ class DTH(Memory):
         prob_y_current = np.maximum(prob_y_current, 1e-6)
         prob_y_original = np.maximum(prob_y_original, 1e-6)
         
-        prior = np.array([sample.expiration_probability for sample in self.samples])
-        prior = np.minimum(prior, 0.9)
-        prior = np.maximum(prior, 0.1)
+        # prior = np.array([sample.expiration_probability for sample in self.samples])
+        # prior = np.minimum(prior, 0.9)
+        # prior = np.maximum(prior, 0.1)
 
         # print('prior:', prior)
         # print('prob_y_current:', prob_y_current)
@@ -75,22 +80,42 @@ class DTH(Memory):
 
         prior = self.prior
         prob_original_given_y = (prob_y_original * prior) / (prob_y_original * prior + prob_y_current * (1 - prior))
-        # print('prob_y_current:', prob_original_given_y)
-        num_removed = 0
-        for i, sample in enumerate(self.samples):
-            sample.expiration_probability = prob_original_given_y[i]
-            # if prob_original_given_y[i] > self.epsilon and sigma_c[i] < np.mean(sigma_c):
-            if prob_original_given_y[i] > self.epsilon:
-                if num_removed > 5:
-                    self.fit_base_learner()
-                    num_removed = 0
-                # print('removing:', i, prob_original_given_y[i], sigma_c[i])
-                self.samples.pop(i)
-                num_removed += 1
+
+        # # print('prob_y_current:', prob_original_given_y)
+        # num_removed = 0
+        # for i, sample in enumerate(self.samples):
+        #     sample.expiration_probability = prob_original_given_y[i]
+        #     # if prob_original_given_y[i] > self.epsilon and sigma_c[i] < np.mean(sigma_c):
+        #     if prob_original_given_y[i] > self.epsilon:
+        #         if num_removed > 5:
+        #             self.fit_base_learner()
+        #             num_removed = 0
+        #         # print('removing:', i, prob_original_given_y[i], sigma_c[i])
+        #         self.samples.pop(i)
+        #         num_removed += 1
+
+        
+        # Create a boolean array where the condition is True for samples that should be deactivated
+        to_deactivate = (prob_original_given_y > self.epsilon)
+        # print(prob_original_given_y)
+        # get the indices of the active samples
+        actives = np.where(self.active_indices)[0]
+        # print('actives shape:', actives.shape)
+        # print('to_deactivate:', to_deactivate)
+        if len(to_deactivate) > 0:
+            for i in actives[to_deactivate]:
+                self.active_indices[i] = False
+
+        # Deactivate the samples
+        # self.active_indices[to_deactivate] = False
+
+
+        
 
     
     def predict_bulk(self, X_batch_with_time):
         if self.base_learner.model.__class__.__name__ == 'RandomForestRegressor':
+            # print('X_batch_with_time shape:', X_batch_with_time.shape)
             return self.base_learner.get_sub_predictions(X_batch_with_time)
 
 

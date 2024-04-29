@@ -1,14 +1,14 @@
 import numpy as np
 # import copy
-from utility.sample import Memory
+from utility.memory import Memory
 # from skmultiflow.drift_detection import KSWIN as KolmogorovSmirnovWIN
 
 from river.drift import KSWIN as KolmogorovSmirnovWIN
 
 class KSWIN(KolmogorovSmirnovWIN, Memory):
-    def __init__(self,alpha=0.005, window_size=100, stat_size=30, min_memory_len=10):
+    def __init__(self,alpha=0.005, window_size=100, stat_size=30, min_memory_len=10, max_num_samples=None, num_features=None):
         super().__init__(alpha=alpha, window_size=window_size, stat_size=stat_size)
-        Memory.__init__(self)
+        Memory.__init__(self,max_num_samples=max_num_samples, num_features=num_features)
 
         self.change_flag = False
         self.change_flag_history = []
@@ -28,7 +28,8 @@ class KSWIN(KolmogorovSmirnovWIN, Memory):
 
     def update_memory(self):
         if self.change_flag:
-            self.samples = self.samples[-self.min_memory_len:]
+            self.forget_before(self.min_memory_len)
+            # self.samples = self.samples[-self.min_memory_len:]
 
     def reset_detector(self):
         self.reset()
@@ -48,7 +49,7 @@ class KSWIN(KolmogorovSmirnovWIN, Memory):
         # self.base_learner.reset()
         # self.base_learner.model.fit(self.get_X_with_time(), self.get_y())
         self.fit_to_memory()
-        if len(self.samples) > 1:
-            self.base_learner_is_fitted = True
+        # if len(self.samples) > 1:
+        #     self.base_learner_is_fitted = True
             
     

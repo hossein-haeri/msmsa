@@ -12,7 +12,7 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
     #     synthetic_param['noise_var']=0.2
     #     synthetic_param['drift_probability']=0.05
 
-    hyper_w = None
+    data_w = None
     trip_ids = None
 
     # if dataset_name == 'Teconer':
