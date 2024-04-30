@@ -1,6 +1,6 @@
 
 import numpy as np
-# import copy
+import copy
 # import sys
 # import random
 # from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -36,6 +36,7 @@ class DTH(Memory):
         self.sample_id_counter = 0
         self.current_time = 0
         self.first_time = True
+        self.model_memory = []
 
 
     def update_online_model(self, X, y):
@@ -50,7 +51,10 @@ class DTH(Memory):
             # self.base_learner.model.fit(X, y)
             # self.base_learner_is_fitted = True
             self.fit_to_memory()
-            
+            self.model_memory.append(copy.deepcopy(self.base_learner.model))
+            if len(self.model_memory) > 10:
+                self.model_memory.pop(0)
+    
     def prune_memory(self):
 
         X_with_t_o = self.get_X_with_time()
@@ -94,28 +98,24 @@ class DTH(Memory):
         #         self.samples.pop(i)
         #         num_removed += 1
 
-        
         # Create a boolean array where the condition is True for samples that should be deactivated
         to_deactivate = (prob_original_given_y > self.epsilon)
-        # print(prob_original_given_y)
+
         # get the indices of the active samples
         actives = np.where(self.active_indices)[0]
-        # print('actives shape:', actives.shape)
-        # print('to_deactivate:', to_deactivate)
         if len(to_deactivate) > 0:
             for i in actives[to_deactivate]:
                 self.active_indices[i] = False
-
-        # Deactivate the samples
-        # self.active_indices[to_deactivate] = False
-
-
-        
 
     
     def predict_bulk(self, X_batch_with_time):
         if self.base_learner.model.__class__.__name__ == 'RandomForestRegressor':
             # print('X_batch_with_time shape:', X_batch_with_time.shape)
             return self.base_learner.get_sub_predictions(X_batch_with_time)
+        else:
+            error = 'predict_bulk is not implemented for base_learner: ' + self.base_learner.model.__class__.__name__
+            raise NotImplementedError(error)
+    
+
 
 

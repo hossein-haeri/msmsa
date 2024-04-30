@@ -34,12 +34,11 @@ from utility.utilities import Logger, Plotter
 
 
 def rescale(y, scaler):
-    # return np.array(y)
     return scaler.inverse_transform(np.asarray(y).reshape(-1, 1)).squeeze()
 
 
 def run(online_model_name, base_learner_name, dataset_name, synthetic_param, seed=None):
-        
+    
     data_X, data_y, scaler_X, scaler_y, hyper_w = load_dataset(dataset_name, synthetic_param, seed=int(seed))
     if base_learner_name == 'RF':
         base_learner = learning_models.RandomForest(n_estimators=50, bootstrap=True, n_jobs=-1, max_depth=7)
@@ -55,12 +54,6 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
         print('Base learner not found')
 
 
-    # num_feautres = 8
-    # num_samples = 10000
-    num_feautres = len(data_X[0])+1
-    num_samples = len(data_X)
-
-
     if online_model_name == 'MSMSA':
         online_model = msmsa.MSMSA()
     elif online_model_name == 'MSMSA+':
@@ -68,7 +61,7 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
     elif online_model_name == 'DAVAR':
         online_model = davar_reg.DAVAR(lam=10)
     elif online_model_name == 'KSWIN':
-        online_model = kswin_reg.KSWIN(max_num_samples=num_samples, num_features=num_feautres)
+        online_model = kswin_reg.KSWIN()
     elif online_model_name == 'ADWIN':
         online_model = adwin_reg.ADWIN()
     elif online_model_name == 'DDM':
@@ -80,17 +73,13 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
     elif online_model_name == 'AUE':
         online_model = aue.AUE(min_memory_len=10, batch_size=20)
     elif online_model_name == 'DTH':
-        online_model = dth.DTH(max_num_samples=num_samples, num_features=num_feautres)
+        online_model = dth.DTH()
     else:
         print('Online learner not found')
 
-
     online_model.base_learner = base_learner
 
-
-
     logger = Logger()
-    logger.method_name = online_model.method_name
 
     y_pred = 0
 
@@ -107,7 +96,6 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
 
         online_model.update_online_model(X_with_time, y)
     
-        
         # retransform y and y_pred back to original scale
         y = rescale(y, scaler_y)
         y_pred = rescale(y_pred, scaler_y)
@@ -118,21 +106,29 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
         logger.X.append(X)
         stream_bar.set_postfix(MemSize=num_train_samples, Ratio=(num_train_samples)/(k+1))
         if wandb_log:
-            if 'Hyper' in dataset_name:
-                wandb.log({
+            # if 'Hyper' not in dataset_name:
+            wandb.log({
                         'run_abs_error': np.abs(y - y_pred),
                         'run_y': y,
                         'run_y_pred': y_pred,
                         'run_w': hyper_w[k],
                         'run_memory_size': num_train_samples,
                         })
-            else:
-                wandb.log({'run_abs_error': np.abs(y - y_pred)})
+            # wandb.log({'run_abs_error': np.abs(y - y_pred)})
         
 
     logger.sclaer_y = scaler_y
     logger.scaler_X = scaler_X
-    logger.finish()
+    logger.method_name = online_model.method_name
+    logger.hyperparams = online_model.hyperparams
+    logger.summary['mean_memory_size'] = np.mean(logger.num_train_samples_list)
+    logger.summary['MAE'] = np.mean(logger.errors)
+    logger.summary['RMSE'] = np.sqrt(np.mean(np.square(logger.errors)))
+    logger.summary['MAPE'] = np.mean(np.abs(np.array(logger.errors) / np.array(logger.y)))
+    logger.summary['R2'] = 1 - np.sum(np.square(logger.errors)) / np.sum(np.square(np.array(logger.y) - np.mean(logger.y)))
+
+    # logger.finish()
+    
     return logger
 
 
@@ -146,10 +142,6 @@ dataset_name = sys.argv[1]
 online_model_name = sys.argv[2]
 base_learner_name = sys.argv[3]
 seed = sys.argv[4]
-# if additional argument is given get it as the tag for wandb
-# if len(sys.argv) > 5:
-#     wandb_run.tags = sys.argv[5:]
-
 
 
 if 'Hyper' in dataset_name:
@@ -175,7 +167,8 @@ config={
     }
 
 if wandb_log:
-    wandb_run = wandb.init(project='stream_learning', entity='haeri-hsn', config=config)
+        wandb_run = wandb.init(project='stream_learning', entity='haeri-hsn', config=config)
+
 
 # print(config)
 log = run(
@@ -190,6 +183,7 @@ log = run(
 
 # config['summary'] = log.summary
 config.update(log.summary)
+config.update(log.hyperparams)
 
 # print(config)
 if wandb_log:

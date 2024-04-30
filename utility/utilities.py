@@ -83,13 +83,8 @@ class Plotter:
 
 class Logger:
     def __init__(self):
-        # self.summary = pd.DataFrame(columns=[   'dataset_name',
-        #                                         'method_name', 
-        #                                         'base_learner_name', 
-        #                                         'mae', 
-        #                                         'average_training_samples', 
-        #                                         ])
         self.summary = {}
+        self.hyperparams = {}
         self.X = []
         self.y = []
         self.y_pred = []
@@ -120,11 +115,6 @@ class Logger:
         # add R-squared to the summary dictionary
         self.summary['R2'] = 1 - np.sum(np.square(self.errors)) / np.sum(np.square(np.array(self.y) - np.mean(self.y)))
 
-
-        # # assuming synthetic_param is a dictionary, concat it to the summary dictionary
-        # if 'Hyper' in self.summary['dataset_name']:
-        #     self.summary = {**self.summary, **self.synthetic_param}
-        
 
         
 
