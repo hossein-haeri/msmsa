@@ -33,8 +33,8 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         # pickle the df 
         # df.to_pickle(dataset_name+'_records.pkl')
         # print(df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].head())
-        # data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy(dtype=float)
-        data_X = df[['AbsoluteTime','Latitude']].to_numpy(dtype=float)
+        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy(dtype=float)
+        # data_X = df[['AbsoluteTime','Latitude']].to_numpy(dtype=float)
         trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
 
@@ -183,8 +183,8 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
     data_X = scaler_X.fit_transform(data_X)
     scaler_y = StandardScaler()
     data_y = scaler_y.fit_transform(data_y.reshape(-1, 1)).squeeze()
-    # if 'Teconer' in dataset_name:
-    #     return data_X, data_y, scaler_X, scaler_y, trip_ids
+    if 'Teconer' in dataset_name:
+        return data_X, data_y, scaler_X, scaler_y, trip_ids
     # else:
     #     return data_X, data_y, scaler_X, scaler_y
     return data_X, data_y, scaler_X, scaler_y, data_w

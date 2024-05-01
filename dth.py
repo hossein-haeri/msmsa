@@ -36,13 +36,13 @@ class DTH(Memory):
         self.first_time = True
         self.model_memory = []
 
-    def update_online_model(self, X, y, fit_base_learner=True):
+    def update_online_model(self, X, y, fit_base_learner=True, prune_memory=True):
         self.add_sample(X, y)
         if fit_base_learner:
             self.fit_base_learner()
             self.first_time = False
-            if len(self.model_memory) >= 50:
-                self.prune_memory()
+            if prune_memory and len(self.model_memory) >= 50:
+                    self.prune_memory()
 
     def fit_base_learner(self):
             # X = self.get_X_with_time()
