@@ -6,9 +6,9 @@ from utility.memory import Memory
 from river.drift import KSWIN as KolmogorovSmirnovWIN
 
 class KSWIN(KolmogorovSmirnovWIN, Memory):
-    def __init__(self,alpha=0.005, window_size=100, stat_size=30, min_memory_len=10, max_num_samples=None, num_features=None):
+    def __init__(self,alpha=0.005, window_size=100, stat_size=30, min_memory_len=10):
         super().__init__(alpha=alpha, window_size=window_size, stat_size=stat_size)
-        Memory.__init__(self,max_num_samples=max_num_samples, num_features=num_features)
+        Memory.__init__(self)
 
         self.change_flag = False
         self.change_flag_history = []
@@ -29,7 +29,6 @@ class KSWIN(KolmogorovSmirnovWIN, Memory):
     def update_memory(self):
         if self.change_flag:
             self.forget_before(self.min_memory_len)
-            # self.samples = self.samples[-self.min_memory_len:]
 
     def reset_detector(self):
         self.reset()
@@ -37,7 +36,7 @@ class KSWIN(KolmogorovSmirnovWIN, Memory):
         self.change_flag = False
         self.change_flag_history = []
     
-    def update_online_model(self, X, y):
+    def update_online_model(self, X, y, fit_base_learner=True):
         self.add_sample(X, y)
 
         if self.base_learner_is_fitted:
@@ -46,10 +45,8 @@ class KSWIN(KolmogorovSmirnovWIN, Memory):
             y_hat = 0
         error = self.mean_absoulte_error(y, y_hat)
         self.detect(error)
-        # self.base_learner.reset()
-        # self.base_learner.model.fit(self.get_X_with_time(), self.get_y())
-        self.fit_to_memory()
-        # if len(self.samples) > 1:
-        #     self.base_learner_is_fitted = True
+        if fit_base_learner:
+            self.fit_to_memory()
+
             
     

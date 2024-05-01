@@ -18,12 +18,10 @@ from utility.memory import Memory
 class DTH(Memory):
     ''''' Time needs to be the first feature in the input data. '''''
     def __init__(self, 
-                 epsilon=0.8,
+                 epsilon=0.9,
                  prior=0.5,
-                 max_num_samples=None,
-                 num_features=None,
                  ):
-        super().__init__(max_num_samples=max_num_samples, num_features=num_features)
+        super().__init__()
 
         ### hyper-parameters
         self.epsilon = epsilon
@@ -38,12 +36,13 @@ class DTH(Memory):
         self.first_time = True
         self.model_memory = []
 
-
-    def update_online_model(self, X, y):
+    def update_online_model(self, X, y, fit_base_learner=True):
         self.add_sample(X, y)
-        self.fit_base_learner()
-        self.first_time = False
-        self.prune_memory()
+        if fit_base_learner:
+            self.fit_base_learner()
+            self.first_time = False
+            if len(self.model_memory) >= 50:
+                self.prune_memory()
 
     def fit_base_learner(self):
             # X = self.get_X_with_time()
@@ -52,7 +51,7 @@ class DTH(Memory):
             # self.base_learner_is_fitted = True
             self.fit_to_memory()
             self.model_memory.append(copy.deepcopy(self.base_learner.model))
-            if len(self.model_memory) > 10:
+            if len(self.model_memory) > 50:
                 self.model_memory.pop(0)
     
     def prune_memory(self):
@@ -60,7 +59,6 @@ class DTH(Memory):
         X_with_t_o = self.get_X_with_time()
         X_with_t_c = self.get_X_with_current_time()
         y = self.get_y()
-
 
         mu_o, sigma_o = self.predict_bulk(X_with_t_o)
         mu_c, sigma_c = self.predict_bulk(X_with_t_c)
@@ -82,9 +80,10 @@ class DTH(Memory):
         # print('prob_y_current:', prob_y_current)
         # print('prob_y_original:', prob_y_original)
 
-        prior = self.prior
-        prob_original_given_y = (prob_y_original * prior) / (prob_y_original * prior + prob_y_current * (1 - prior))
-
+        # prior = self.prior
+        prob_original_given_y = (prob_y_original * self.prior) / (prob_y_original * self.prior + prob_y_current * (1 - self.prior))
+        
+        # self.prior = prob_original_given_y
         # # print('prob_y_current:', prob_original_given_y)
         # num_removed = 0
         # for i, sample in enumerate(self.samples):
@@ -107,14 +106,20 @@ class DTH(Memory):
             for i in actives[to_deactivate]:
                 self.active_indices[i] = False
 
-    
+
     def predict_bulk(self, X_batch_with_time):
-        if self.base_learner.model.__class__.__name__ == 'RandomForestRegressor':
-            # print('X_batch_with_time shape:', X_batch_with_time.shape)
-            return self.base_learner.get_sub_predictions(X_batch_with_time)
-        else:
-            error = 'predict_bulk is not implemented for base_learner: ' + self.base_learner.model.__class__.__name__
-            raise NotImplementedError(error)
+        # if self.base_learner.model.__class__.__name__ == 'RandomForestRegressor':
+        #     # print('X_batch_with_time shape:', X_batch_with_time.shape)
+        #     return self.base_learner.get_sub_predictions(X_batch_with_time)
+        # else:
+        #     error = 'predict_bulk is not implemented for base_learner: ' + self.base_learner.model.__class__.__name__
+        #     raise NotImplementedError(error)
+
+        y_pred = np.zeros(len(self.model_memory))
+        for i, model in enumerate(self.model_memory):
+            y_pred[i] = model.predict(X_batch_with_time)[0]
+        return y_pred[-1], np.std(y_pred)
+        # return np.mean(y_pred), np.std(y_pred)
     
 
 

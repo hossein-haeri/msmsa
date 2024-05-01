@@ -98,7 +98,7 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         df = pd.read_csv('datasets/household_power_consumption.csv').dropna()
         # df = df.reset_index().rename(columns={'index': 'index_col'})
         data_y = df['Sub_metering_3'].to_numpy()[:10_000]
-        data_X = df[['index_col','Global_active_power','Global_active_power','Global_reactive_power','Voltage','Global_intensity','Sub_metering_1','Sub_metering_2']].to_numpy()[:10_000]
+        data_X = df[['Global_active_power','Global_active_power','Global_reactive_power','Voltage','Global_intensity','Sub_metering_1','Sub_metering_2']].to_numpy()[:10_000]
 
     if dataset_name == 'Bike (daily)':
         df = pd.read_csv('datasets/bike_day.csv')
@@ -179,8 +179,6 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
     # if 'Hyper' in dataset_name:
         # include time (index) as a feature
     # data_X = np.column_stack((np.arange(len(data_X)), data_X))
-
-
     scaler_X = StandardScaler()
     data_X = scaler_X.fit_transform(data_X)
     scaler_y = StandardScaler()

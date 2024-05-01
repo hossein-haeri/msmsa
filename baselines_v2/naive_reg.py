@@ -1,5 +1,5 @@
 import numpy as np
-from utility.sample import Memory
+from utility.memory import Memory
 
 class Naive(Memory):
     def __init__(self):
@@ -21,7 +21,7 @@ class Naive(Memory):
     def reset_detector(self):
         self.__init__(self)
         
-    def update_online_model(self, X, y):
+    def update_online_model(self, X, y, fit_base_learner=True):
         self.add_sample(X, y)
         if self.base_learner_is_fitted:
             y_hat = self.predict_online_model(X)
@@ -29,8 +29,5 @@ class Naive(Memory):
             y_hat = 0
         error = self.mean_absoulte_error(y, y_hat)
         self.detect(error)
-        # self.base_learner.reset()
-        # self.base_learner.model.fit(self.get_X_with_time(), self.get_y())
-        self.fit_to_memory()
-        # if len(self.samples) > 1:
-        #     self.base_learner_is_fitted = True
+        if fit_base_learner:
+            self.fit_to_memory()

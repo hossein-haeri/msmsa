@@ -41,11 +41,11 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
     
     data_X, data_y, scaler_X, scaler_y, hyper_w = load_dataset(dataset_name, synthetic_param, seed=int(seed))
     if base_learner_name == 'RF':
-        base_learner = learning_models.RandomForest(n_estimators=50, bootstrap=True, n_jobs=-1, max_depth=7)
+        base_learner = learning_models.RandomForest(n_estimators=20, bootstrap=True, n_jobs=-1, max_depth=7)
     elif base_learner_name == 'LNR':
         base_learner = learning_models.Linear()
     elif base_learner_name == 'DT':
-        base_learner = learning_models.DecissionTree(max_depth=5)
+        base_learner = learning_models.DecissionTree(max_depth=7)
     elif base_learner_name == 'SVR':
         base_learner = learning_models.SVReg()
     elif base_learner_name == 'NN':
@@ -94,7 +94,7 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
 
         y_pred = online_model.predict_online_model(X_with_time)[0]
 
-        online_model.update_online_model(X_with_time, y)
+        online_model.update_online_model(X_with_time, y, fit_base_learner=True)
     
         # retransform y and y_pred back to original scale
         y = rescale(y, scaler_y)
@@ -106,14 +106,21 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
         logger.X.append(X)
         stream_bar.set_postfix(MemSize=num_train_samples, Ratio=(num_train_samples)/(k+1))
         if wandb_log:
-            # if 'Hyper' not in dataset_name:
-            wandb.log({
-                        'run_abs_error': np.abs(y - y_pred),
-                        'run_y': y,
-                        'run_y_pred': y_pred,
-                        'run_w': hyper_w[k],
-                        'run_memory_size': num_train_samples,
-                        })
+            if 'Hyper' not in dataset_name:
+                wandb.log({
+                            'run_abs_error': np.abs(y - y_pred),
+                            'run_y': y,
+                            'run_y_pred': y_pred,
+                            'run_memory_size': num_train_samples,
+                            })
+            else:
+                wandb.log({
+                            'run_abs_error': np.abs(y - y_pred),
+                            'run_y': y,
+                            'run_y_pred': y_pred,
+                            'run_w': hyper_w[k],
+                            'run_memory_size': num_train_samples,
+                            })
             # wandb.log({'run_abs_error': np.abs(y - y_pred)})
         
 
@@ -147,7 +154,7 @@ seed = sys.argv[4]
 if 'Hyper' in dataset_name:
     synthetic_param = {'noise_var': 0.01, # [0, 1, 2, 3, 4, 5]
                        'stream_size': 1_000,
-                       'drift_prob':0.01,
+                       'drift_prob':0.005,
                        'dim': 5}
 else:
     synthetic_param = None

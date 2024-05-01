@@ -147,7 +147,7 @@ class RandomForest:
 
 
 class Linear:
-    def __init__(self, alpha=10):
+    def __init__(self, alpha=.1):
         self.alpha = alpha
         # self.model = LinearRegression(fit_intercept = True)
         self.model = Ridge(alpha=self.alpha, fit_intercept = True)

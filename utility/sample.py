@@ -18,7 +18,6 @@ class Sample:
     
     def X_with_current_time(self, current_time):
         return np.append(current_time, self.X)
-    
 
 
 class Memory:
@@ -91,6 +90,5 @@ class Memory:
             return
         self.base_learner.model.fit(self.get_X_with_time(), self.get_y())
         self.base_learner_is_fitted = True
-
 
 
