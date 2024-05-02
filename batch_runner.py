@@ -6,16 +6,16 @@ import sys
 import time
 # List of dataset names
 # wandb_enable = True
-# datasets = ['Hyper-A', 'Hyper-I', 'Hyper-G', 'Hyper-LN', 'Hyper-RW', 'Hyper-GU']
+datasets = ['Hyper-A', 'Hyper-I', 'Hyper-G', 'Hyper-LN', 'Hyper-RW', 'Hyper-GU',
 # datasets = ['Hyper-A']
-datasets = [
+# datasets = [
             'Bike (daily)',
             'Bike (hourly)',
             'Household energy',
             'Melbourne housing',
             'Air quality',
             # 'Friction',
-            'NYC taxi',
+            # 'NYC taxi',
             # 'Teconer_100K',
             # 'Teconer_10K'
 ]
@@ -25,14 +25,14 @@ methods = ['DTH', 'KSWIN', 'Naive']
 # methods = ['DTH']
 
 # List of base learners
-base_learners = ['DT']
+base_learners = ['NN']
 
 # Number of repetitions
-repetitions = 1
+repetitions = 50
 
 # Function to run the command silently
 def run_simulation(dataset, method, base_learner, seed):
-    command = f"python sim_runner_v3.py {dataset} {method} {base_learner} {seed}"
+    command = f"python sim_runner_v3.py {dataset} {method} {base_learner} {seed} {'nn batch analysis'}"
     subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     # subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
     print(f"Executed: {dataset}, {method}, {base_learner}, seed:{seed}")

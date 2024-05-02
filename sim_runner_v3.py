@@ -31,6 +31,12 @@ import wandb
 from utility.utilities import Logger, Plotter
 
 
+from sklearn.linear_model import Ridge
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.svm import SVR
+from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import RandomForestRegressor
 
 
 def rescale(y, scaler):
@@ -40,16 +46,27 @@ def rescale(y, scaler):
 def run(online_model_name, base_learner_name, dataset_name, synthetic_param, seed=None):
     
     data_X, data_y, scaler_X, scaler_y, hyper_w = load_dataset(dataset_name, synthetic_param, seed=int(seed))
+
     if base_learner_name == 'RF':
-        base_learner = learning_models.RandomForest(n_estimators=20, bootstrap=True, n_jobs=-1, max_depth=7)
+        # base_learner = learning_models.RandomForest(n_estimators=20, bootstrap=True, n_jobs=-1, max_depth=7)
+        base_learner = RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=-1, bootstrap=True)
     elif base_learner_name == 'LNR':
-        base_learner = learning_models.Linear()
+        # base_learner = learning_models.Linear()
+        base_learner = Ridge(alpha=0.1, fit_intercept = True)
     elif base_learner_name == 'DT':
-        base_learner = learning_models.DecissionTree(max_depth=7)
+        # base_learner = learning_models.DecissionTree(max_depth=7)
+        base_learner = DecisionTreeRegressor(max_depth=7)
     elif base_learner_name == 'SVR':
-        base_learner = learning_models.SVReg()
+        # base_learner = learning_models.SVReg()
+        base_learner = SVR(kernel='rbf', C=10, gamma=0.3, epsilon=.1)
     elif base_learner_name == 'NN':
-        base_learner = learning_models.NeuralNet()
+        # base_learner = learning_models.NeuralNet()
+        base_learner = neural_net_base_learner.RegressionNN(    hidden_layers=[50, 50],
+                                                                input_dim=data_X.shape[1]+1, 
+                                                                output_dim=1,
+                                                                dropout=0.1, 
+                                                                learning_rate=0.01, 
+                                                                epochs=10)
     else:
         print('Base learner not found')
 
@@ -94,7 +111,10 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
 
         y_pred = online_model.predict_online_model(X_with_time)[0]
 
-        online_model.update_online_model(X_with_time, y, fit_base_learner=True)
+        if k%100 == 0:
+            online_model.update_online_model(X_with_time, y, fit_base_learner=True)
+        else:
+            online_model.update_online_model(X_with_time, y, fit_base_learner=False)
     
         # retransform y and y_pred back to original scale
         y = rescale(y, scaler_y)
@@ -104,22 +124,29 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
         num_train_samples = online_model.get_num_samples()
         logger.log(y, y_pred, num_train_samples=num_train_samples)
         logger.X.append(X)
-        stream_bar.set_postfix(MemSize=num_train_samples, Ratio=(num_train_samples)/(k+1))
+        stream_bar.set_postfix(MemSize=online_model.X.shape[0], KeepRatio=(num_train_samples)/(k+1))
         if wandb_log:
-            if 'Hyper' not in dataset_name:
+            if 'Teconer' in dataset_name:
                 wandb.log({
                             'run_abs_error': np.abs(y - y_pred),
                             'run_y': y,
                             'run_y_pred': y_pred,
-                            'run_memory_size': num_train_samples,
+                            'num_train_samples': num_train_samples,
+                            })
+            elif 'Hyper' in dataset_name:
+                wandb.log({
+                            'run_abs_error': np.abs(y - y_pred),
+                            'run_y': y,
+                            'run_y_pred': y_pred,
+                            'run_w': hyper_w[k],
+                            'num_train_samples': num_train_samples,
                             })
             else:
                 wandb.log({
                             'run_abs_error': np.abs(y - y_pred),
                             'run_y': y,
                             'run_y_pred': y_pred,
-                            'run_w': hyper_w[k],
-                            'run_memory_size': num_train_samples,
+                            'num_train_samples': num_train_samples,
                             })
             # wandb.log({'run_abs_error': np.abs(y - y_pred)})
         
@@ -149,6 +176,9 @@ dataset_name = sys.argv[1]
 online_model_name = sys.argv[2]
 base_learner_name = sys.argv[3]
 seed = sys.argv[4]
+if len(sys.argv) > 5:
+    tag = sys.argv[5]
+
 
 
 if 'Hyper' in dataset_name:
@@ -170,6 +200,7 @@ config={
         "base_learner": base_learner_name,
         "seed": seed,
         "synthetic_params": synthetic_param,
+        "tag": tag,
         # "hyperparams": online_model.hyperparams,
     }
 

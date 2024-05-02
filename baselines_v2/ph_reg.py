@@ -1,10 +1,13 @@
 import numpy as np
 # from skmultiflow.drift_detection import PageHinkley
 from river.drift import PageHinkley
+from utility.memory import Memory
 
 class PH(PageHinkley):
     def __init__(self,min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10):
         super().__init__(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001)
+        Memory.__init__(self)
+
         self.base_learner = None
         self.base_learner_is_fitted = False
         self.memory = []
@@ -22,8 +25,8 @@ class PH(PageHinkley):
                 
                             }
 
-    def add_sample(self, X, y):
-        self.memory.append((X, y))
+    # def add_sample(self, X, y):
+    #     self.memory.append((X, y))
 
     def detect(self, error):
         # self.add_element(error)
@@ -34,14 +37,16 @@ class PH(PageHinkley):
 
     def update_memory(self):
         if self.change_flag:
-            self.memory = self.memory[-self.min_memory_len:]
+            self.forget_before(self.min_memory_len)
 
-    def get_recent_data(self):
-        return self.memory
+    # def get_recent_data(self):
+    #     return self.memory
 
 
-    def get_val_horizon(self):
-        return len(self.memory)
+    # def get_val_horizon(self):
+    #     return len(self.memory)
+
+
     def reset_detector(self):
         self.reset()
         self.memory = []
@@ -54,8 +59,7 @@ class PH(PageHinkley):
     #     model.fit(self.memory)
     #     return model, len(self.memory)
     
-
-    def update_online_model(self, X, y):
+    def update_online_model(self, X, y, fit_base_learner=True):
         self.add_sample(X, y)
         if self.base_learner_is_fitted:
             y_hat = self.predict_online_model(X)
@@ -63,15 +67,17 @@ class PH(PageHinkley):
             y_hat = 0
         error = self.mean_absoulte_error(y, y_hat)
         self.detect(error)
-        self.base_learner.reset()
-        self.base_learner.fit(self.memory)
-        if len(self.memory) > 1:
-            self.base_learner_is_fitted = True
-        return None
+        if fit_base_learner:
+            self.fit_to_memory()
+        # self.base_learner.reset()
+        # self.base_learner.fit(self.memory)
+        # if len(self.memory) > 1:
+        #     self.base_learner_is_fitted = True
+        # return None
     
-    def predict_online_model(self, X):
-        return self.base_learner.predict(X)
+    # def predict_online_model(self, X):
+    #     return self.base_learner.predict(X)
     
     
-    def mean_absoulte_error(self, y_true, y_pred):
-        return np.mean(np.absolute(y_true - y_pred))
+    # def mean_absoulte_error(self, y_true, y_pred):
+    #     return np.mean(np.absolute(y_true - y_pred))

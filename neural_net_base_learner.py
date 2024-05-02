@@ -1,64 +1,85 @@
-import jax.numpy as jnp
-from jax import random, grad, jit
-from flax import linen as nn
-from flax.training import train_state
-import optax
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
-# Define the DNN model
-class DNN(nn.Module):
-    @nn.compact
-    def __call__(self, x):
-        x = nn.Dense(128)(x)
-        x = nn.relu(x)
-        x = nn.Dense(64)(x)
-        x = nn.relu(x)
-        x = nn.Dense(1)(x)
-        return x
-
-# Define a class similar to the DecisionTree class but for a DNN model
-class DNNRegressor:
-    def __init__(self, learning_rate=0.001):
-        self.learning_rate = learning_rate
-        self.model = DNN()
-        self.params = None
-        self.rng = random.PRNGKey(0)
+class RegressionNN(nn.Module):
+    def __init__(self, input_dim, hidden_layers, output_dim=1, dropout=0.1, learning_rate=0.01, epochs=10):
+        super(RegressionNN, self).__init__()
+        # Define the architecture
+        layers = []
+        for hidden_dim in hidden_layers:
+            layers.append(nn.Linear(input_dim, hidden_dim))
+            layers.append(nn.ReLU())
+            layers.append(nn.Dropout(dropout))  # Dropout layer with a default rate of 0.5
+            input_dim = hidden_dim
+        layers.append(nn.Linear(hidden_layers[-1], output_dim))
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print('Device:', device)
+        self.model = nn.Sequential(*layers).to(device)
+        self.loss_fn = nn.MSELoss()
         self.optimizer = None
-        self.y_pred_history = []
-        self.error_history = []
-
-    def create_train_state(self, rng, learning_rate, input_shape):
-        params = self.model.init(rng, jnp.ones(input_shape))['params']
-        tx = optax.adam(learning_rate)
-        return train_state.TrainState.create(apply_fn=self.model.apply, params=params, tx=tx)
-
-    def loss_fn(self, params, inputs, targets):
-        preds = self.model.apply({'params': params}, inputs)
-        return jnp.mean((preds - targets) ** 2)
-
-    def fit(self, train_data, epochs=1, batch_size=32):
-        X = jnp.array([sample[0] for sample in train_data])
-        y = jnp.array([sample[1] for sample in train_data]).reshape(-1, 1)
-
-        if self.optimizer is None:
-            self.rng, rng_init = random.split(self.rng)
-            self.optimizer = self.create_train_state(rng_init, self.learning_rate, X.shape)
+        self.learning_rate = learning_rate
+        self.epochs = epochs
 
 
-        @jit
-        def train_step(optimizer, batch):
-            def loss_fn(params):
-                return self.loss_fn(params, batch[0], batch[1])
-            grads = grad(loss_fn)(optimizer.params)
-            return optimizer.apply_gradients(grads=grads)
-
-        # for epoch in range(epochs):
-        self.optimizer = train_step(self.optimizer, (X, y))
-
+    def forward(self, x):
+        return self.model(x)
+    
+    def fit(self, X, y):
+        # self.reset()
+        self.train()  # Set the model to training mode
+        self.optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
+        X = torch.tensor(X, dtype=torch.float32)
+        y = torch.tensor(y, dtype=torch.float32)
+        
+        for epoch in range(self.epochs):
+            y_pred = self.forward(X).squeeze(1)
+            loss = self.loss_fn(y_pred, y)
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+    
     def predict(self, X):
-        X = jnp.array(X).reshape(1, -1)
-        pred = self.model.apply({'params': self.optimizer.params}, X)
-        self.y_pred_history.append(pred)
-        return pred
-
+        self.eval()  # Set the model to evaluation mode
+        with torch.no_grad():
+            X = torch.tensor(X, dtype=torch.float32)
+            return self.forward(X).numpy()
+    
     def reset(self):
-        self.__init__(learning_rate=self.learning_rate)
+        # Reinitialize weights
+        self.apply(self._init_weights)
+    
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            nn.init.kaiming_uniform_(m.weight)
+            if m.bias is not None:
+                m.bias.data.fill_(0.01)
+    
+    def make_uncertain_predictions(self, X, num_samples=20):
+        # Function to make predictions using dropout at inference
+        self.eval()
+        # Temporarily turn on dropout layers during inference
+        def apply_dropout(m):
+            if type(m) == nn.Dropout:
+                m.train()
+
+        self.apply(apply_dropout)
+        predictions = []
+        X = torch.tensor(X, dtype=torch.float32)
+
+        for _ in range(num_samples):
+            with torch.no_grad():
+                predictions.append(self.forward(X))
+        
+        predictions = torch.stack(predictions)
+        mean = predictions.mean(0)
+        std = predictions.std(0)
+        # print(mean.numpy().shape, std.numpy().shape)
+        return mean.numpy().squeeze(), std.numpy().squeeze()
+
+# The following calls are commented out and should be uncommented only after the user's approval:
+# model = RegressionNN(input_dim=10, hidden_layers=[100, 50])
+# model.fit(X_train, y_train)
+# predictions = model.predict(X_test)
+# uncertain_predictions = model.make_uncertain_prediction(X_test)
+

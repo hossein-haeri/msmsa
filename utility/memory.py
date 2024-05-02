@@ -92,7 +92,7 @@ class Memory:
 
     def predict_online_model(self, X):
         if self.base_learner_is_fitted:
-            return self.base_learner.model.predict(X)
+            return self.base_learner.predict(X)
         elif self.get_num_samples() > 0:
             return [np.mean(self.get_y())]
         else:
@@ -107,7 +107,7 @@ class Memory:
         if self.get_num_samples() < 1:
             print('No active samples in memory to fit')
             return
-        self.base_learner.model.fit(self.get_X_with_time(), self.get_y())
+        self.base_learner.fit(self.get_X_with_time(), self.get_y())
         self.base_learner_is_fitted = True
 
 

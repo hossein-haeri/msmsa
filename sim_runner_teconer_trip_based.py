@@ -33,9 +33,9 @@ import dth
 def rescale(y, scaler):
     return scaler.inverse_transform(np.asarray(y).reshape(-1, 1))
 
+
 def rescale_features(X, scaler):
     return scaler.inverse_transform(X)
-
 
 
 def run(online_model, dataset_name, synthetic_param):
@@ -44,18 +44,8 @@ def run(online_model, dataset_name, synthetic_param):
     data_X, data_y, scaler_X, scaler_y, trip_ids = load_dataset(dataset_name, synthetic_param)
     
 
-    if 'Teconer_' in dataset_name:
-        online_model.anchor_samples = data_X
-
-
-    # pred_y = 0
-    # # params = []
-    # update_info_list = []
-    # validation_mae_list = []
-    # y_pred_list = []
-    # y_list = []
-    # val_horizon_list = []
-    # validity_horizon_list = []
+    # if 'Teconer_' in dataset_name:
+    #     online_model.anchor_samples = data_X
 
     predicted_trip_ids = []
 
@@ -63,64 +53,57 @@ def run(online_model, dataset_name, synthetic_param):
     # error_list = []
     num_records = len(data_y)
 
-    start_from_k = 100_000
-    end_at_k = 200_000
-    num_preview_samples = 20_000
+    start_from_k = 0
+    end_at_k = 1_000_000
+    num_preview_samples = 50_000
 
-    # trim the data from the start and end
-    data_X = data_X[start_from_k:end_at_k]
-    data_y = data_y[start_from_k:end_at_k]
-    trip_ids = trip_ids[start_from_k:end_at_k]
+    # # trim the data from the start and end
+    # data_X = data_X[start_from_k:end_at_k]
+    # data_y = data_y[start_from_k:end_at_k]
+    # trip_ids = trip_ids[start_from_k:end_at_k]
 
-    for k, (X, y) in enumerate(tqdm(zip(data_X, data_y),leave=False, disable=False, total=len(data_y))):
-        # if k < start_from_k:
-        #     continue
-        # elif k > end_at_k:
-        #     break
+    # randomly select a subset of the data but keep the order
+    idx = np.random.choice(len(data_y), 1_000_000, replace=False)
+    idx.sort()  # This will sort the indices to maintain the original order
+    data_X = data_X[idx]
+    data_y = data_y[idx]
+    trip_ids = trip_ids[idx]
+
+    stream_bar = tqdm(zip(data_X, data_y),leave=False, disable=False, total=len(data_y))
+    for k, (X, y) in enumerate(stream_bar):
+
 
         X = X.reshape(1,-1)
-        # print(k)
-        # if k < num_records - 1e5:
-        #     online_model.add_sample(X, y)
-
-        #     continue
-
-        # if online_model.method_name == 'Naive':
-        #     if trip_ids[k] not in predicted_trip_ids and k > num_records - 1e5:
-        #         online_model.update_online_model(X, y)
-        #     else:
-        #         online_model.update_online_model(X, y, fit_base_learner=False)
-
-        # else:
-        # print('X shape: ', X.shape)
         
-        
-        online_model.update_online_model(X, y, fit_base_learner=(k%10==0))
+        if trip_ids[k] not in predicted_trip_ids and k <= num_preview_samples:
+            # add the sample to the memory and fit the model
+            online_model.update_online_model(X, y, fit_base_learner=True)
+                        # online_model.update_online_model(X, y, fit_base_learner=(k%100==0) and k>num_preview_samples)
+            # print('predicting trip ', trip_ids.shape[0],' ...')
+            # build X_trip and y_trip from data_X and data_y where X[0] == trip_id
+            X_trip = data_X[trip_ids == trip_ids[k]]
+            y_trip = data_y[trip_ids == trip_ids[k]]
 
-        if k > start_from_k + num_preview_samples:
-            if trip_ids[k] not in predicted_trip_ids:
+            
+            # predict the whole trip
+            pred_trip = online_model.predict_online_model(X_trip)
+            # append the predicted trip to the predictions list
+            predicted_trip_ids.append(trip_ids[k])
+            y_trip_rescaled = rescale(y_trip, scaler_y)
+            pred_trip_rescaled = rescale(pred_trip, scaler_y)
+            X_trip_rescaled = rescale_features(X_trip, scaler_X)
+            trips.append([  trip_ids[k],
+                            X_trip_rescaled,
+                            y_trip_rescaled,
+                            pred_trip_rescaled,
+                            online_model.get_num_samples(),])
+        else:
+            # just add the sample to the memory but do not fit the model
+            online_model.update_online_model(X, y, fit_base_learner=False)
+        stream_bar.set_postfix(MemSize=online_model.X.shape[0], Ratio=(online_model.get_num_samples())/(k+1), NumTrips=len(predicted_trip_ids))
 
-
-                # build X_trip and y_trip from data_X and data_y where X[0] == trip_id
-                X_trip = data_X[trip_ids == trip_ids[k]]
-                y_trip = data_y[trip_ids == trip_ids[k]]
-
-                
-                # predict the whole trip
-                pred_trip = online_model.predict_online_model(X_trip)
-                # append the predicted trip to the predictions list
-                predicted_trip_ids.append(trip_ids[k])
-                y_trip_rescaled = rescale(y_trip, scaler_y)
-                pred_trip_rescaled = rescale(pred_trip, scaler_y)
-                X_trip_rescaled = rescale_features(X_trip, scaler_X)
-                trips.append([  trip_ids[k],
-                                X_trip_rescaled,
-                                y_trip_rescaled,
-                                pred_trip_rescaled,
-                                online_model.get_num_samples(),])
-
-         
     with open('trips_road_piece_dth_with_preview.pkl', 'wb') as f:
+    # with open('trips_100K.pkl', 'wb') as f:
         pickle.dump(trips, f)
 
 
@@ -132,8 +115,8 @@ pickle_log = True
 ################ REAL DATA #################
 datasets = [
             # 'Teconer_full',
-            # 'Teconer_10K',
-            'Teconer_road_piece'
+            'Teconer_100K',
+            # 'Teconer_road_piece'
                 ]
 dataset_configs = {'noise_var':     None,
                    'stream_size':   None,
@@ -150,7 +133,12 @@ base_learners = [
             # learning_models.SVReg(),
             # learning_models.NeuralNet()
             # neural_net_base_learner.DNNRegressor()
-            learning_models.NeuralNet()
+            neural_net_base_learner.RegressionNN(    hidden_layers=[50, 50],
+                                                                input_dim=7, 
+                                                                output_dim=1,
+                                                                dropout=0.1, 
+                                                                learning_rate=0.01, 
+                                                                epochs=10)
         ]
 
 

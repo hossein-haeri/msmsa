@@ -43,24 +43,25 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         # pickle the df 
         df.to_pickle(dataset_name+'_records.pkl')
         # print(df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].head())
-        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy()
-        trip_ids = df['TripID'].to_numpy(dtype=int)
+        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
+        # trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
 
     if dataset_name == 'Teconer_100K':
         df = pd.read_csv('datasets/Teconer_2018_Jan_light_100K.csv').dropna()
         # pickle the df 
+        print(df.columns)
         df.to_pickle(dataset_name+'_records.pkl')
-        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy()
-        trip_ids = df['TripID'].to_numpy(dtype=int)
+        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
+        # trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
 
     if dataset_name == 'Teconer_1M':
         df = pd.read_csv('datasets/Teconer_2018_Jan_light_1M.csv').dropna()
         # pickle the df 
         df.to_pickle(dataset_name+'_records.pkl')
-        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy()
-        trip_ids = df['TripID'].to_numpy(dtype=int)
+        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
+        # trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
 
     if dataset_name == 'Teconer_full':
@@ -68,9 +69,9 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         df = pd.read_csv('datasets/Teconer_downtown_full.csv').dropna()
         # pickle the df 
         df.to_pickle(dataset_name+'_records.pkl')
-        # data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
-        data_X = df[['Latitude', 'Longitude']].to_numpy()
-        trip_ids = df['TripID'].to_numpy(dtype=int)
+        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
+        # data_X = df[['Latitude', 'Longitude']].to_numpy()
+        # trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
         # add Gaussian noise to Friction values with std = 0.1
         # data_y = data_y + np.random.normal(0, 0.4, len(data_y))
@@ -175,7 +176,7 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])
         # data_w = np.array([item[2] for item in stream])
-
+    
     # if 'Hyper' in dataset_name:
         # include time (index) as a feature
     # data_X = np.column_stack((np.arange(len(data_X)), data_X))
@@ -183,7 +184,7 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
     data_X = scaler_X.fit_transform(data_X)
     scaler_y = StandardScaler()
     data_y = scaler_y.fit_transform(data_y.reshape(-1, 1)).squeeze()
-    if 'Teconer' in dataset_name:
+    if 'Teconer_road_piece' in dataset_name:
         return data_X, data_y, scaler_X, scaler_y, trip_ids
     # else:
     #     return data_X, data_y, scaler_X, scaler_y

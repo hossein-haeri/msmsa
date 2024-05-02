@@ -20,14 +20,17 @@ class DTH(Memory):
     def __init__(self, 
                  epsilon=0.9,
                  prior=0.5,
+                 num_sub_predictions=50,
                  ):
         super().__init__()
 
         ### hyper-parameters
         self.epsilon = epsilon
         self.prior = prior
+        self.num_sub_predictions = num_sub_predictions
         self.hyperparams = {'epsilon':epsilon,
                         'prior':prior,
+                        'num_sub_predictions':num_sub_predictions
                           }
         #### initialization
         self.method_name = 'DTH'
@@ -41,18 +44,17 @@ class DTH(Memory):
         if fit_base_learner:
             self.fit_base_learner()
             self.first_time = False
-            if prune_memory and len(self.model_memory) >= 50:
+            # if prune_memory and len(self.model_memory) >= 50:
+            if prune_memory and self.get_num_samples() >= 10:
                     self.prune_memory()
 
     def fit_base_learner(self):
-            # X = self.get_X_with_time()
-            # y = self.get_y()
-            # self.base_learner.model.fit(X, y)
-            # self.base_learner_is_fitted = True
+
             self.fit_to_memory()
-            self.model_memory.append(copy.deepcopy(self.base_learner.model))
-            if len(self.model_memory) > 50:
-                self.model_memory.pop(0)
+
+            # self.model_memory.append(copy.deepcopy(self.base_learner))
+            # if len(self.model_memory) > 50:
+            #     self.model_memory.pop(0)
     
     def prune_memory(self):
 
@@ -63,6 +65,7 @@ class DTH(Memory):
         mu_o, sigma_o = self.predict_bulk(X_with_t_o)
         mu_c, sigma_c = self.predict_bulk(X_with_t_c)
 
+        # print(mu_o.shape, sigma_o.shape, mu_c.shape, sigma_c.shape)
         sigma_o = np.maximum(sigma_o, 1e-6)
         sigma_c = np.maximum(sigma_c, 1e-6)
 
@@ -72,30 +75,9 @@ class DTH(Memory):
         prob_y_current = np.maximum(prob_y_current, 1e-6)
         prob_y_original = np.maximum(prob_y_original, 1e-6)
         
-        # prior = np.array([sample.expiration_probability for sample in self.samples])
-        # prior = np.minimum(prior, 0.9)
-        # prior = np.maximum(prior, 0.1)
 
-        # print('prior:', prior)
-        # print('prob_y_current:', prob_y_current)
-        # print('prob_y_original:', prob_y_original)
-
-        # prior = self.prior
         prob_original_given_y = (prob_y_original * self.prior) / (prob_y_original * self.prior + prob_y_current * (1 - self.prior))
         
-        # self.prior = prob_original_given_y
-        # # print('prob_y_current:', prob_original_given_y)
-        # num_removed = 0
-        # for i, sample in enumerate(self.samples):
-        #     sample.expiration_probability = prob_original_given_y[i]
-        #     # if prob_original_given_y[i] > self.epsilon and sigma_c[i] < np.mean(sigma_c):
-        #     if prob_original_given_y[i] > self.epsilon:
-        #         if num_removed > 5:
-        #             self.fit_base_learner()
-        #             num_removed = 0
-        #         # print('removing:', i, prob_original_given_y[i], sigma_c[i])
-        #         self.samples.pop(i)
-        #         num_removed += 1
 
         # Create a boolean array where the condition is True for samples that should be deactivated
         to_deactivate = (prob_original_given_y > self.epsilon)
@@ -108,18 +90,23 @@ class DTH(Memory):
 
 
     def predict_bulk(self, X_batch_with_time):
-        # if self.base_learner.model.__class__.__name__ == 'RandomForestRegressor':
-        #     # print('X_batch_with_time shape:', X_batch_with_time.shape)
-        #     return self.base_learner.get_sub_predictions(X_batch_with_time)
-        # else:
-        #     error = 'predict_bulk is not implemented for base_learner: ' + self.base_learner.model.__class__.__name__
-        #     raise NotImplementedError(error)
+        if self.base_learner.__class__.__name__ == 'RandomForestRegressor':
+            tree_predictions =  [tree.predict(X_batch_with_time) for tree in self.base_learner.estimators_]
+            return np.mean(tree_predictions, axis=0), np.std(tree_predictions, axis=0)
 
-        y_pred = np.zeros(len(self.model_memory))
-        for i, model in enumerate(self.model_memory):
-            y_pred[i] = model.predict(X_batch_with_time)[0]
-        return y_pred[-1], np.std(y_pred)
-        # return np.mean(y_pred), np.std(y_pred)
+        elif self.base_learner.__class__.__name__ == 'RegressionNN':
+            return self.base_learner.make_uncertain_predictions(X_batch_with_time, num_samples=self.num_sub_predictions)
+            
+        else:
+            # return NotImplementedError
+            raise NotImplementedError
+
+            # y_pred = np.zeros(len(self.model_memory))
+            # for i, model in enumerate(self.model_memory):
+            #     y_pred[i] = model.predict(X_batch_with_time)[0]
+            # return y_pred[-1], np.std(y_pred)
+
+
     
 
 

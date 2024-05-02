@@ -140,7 +140,10 @@ class RandomForest:
     
     def get_sub_predictions(self, X):
         tree_predictions =  [tree.predict(X) for tree in self.model.estimators_]
-        return np.mean(tree_predictions, axis=0), np.std(tree_predictions, axis=0)
+        means = np.mean(tree_predictions, axis=0).squeeze()
+        stds = np.std(tree_predictions, axis=0).squeeze()
+        print(means.shape, stds.shape)
+        return means, stds
 
     def reset(self):
         self.__init__(n_estimators=self.n_estimators, max_depth=self.max_depth, n_jobs=self.n_jobs)
@@ -279,13 +282,13 @@ class NeuralNet:
         warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 
-    def fit(self, train_data):
-        X = [sample[0] for sample in train_data]
-        y = [sample[1] for sample in train_data]
-        if len(train_data) > 1:
-            self.model.fit(X, y)
-        else:
-            pass
+    # def fit(self, train_data):
+    #     X = [sample[0] for sample in train_data]
+    #     y = [sample[1] for sample in train_data]
+    #     if len(train_data) > 1:
+    #         self.model.fit(X, y)
+    #     else:
+    #         pass
 
     def predict(self, X):
         pred = self.model.predict([X])

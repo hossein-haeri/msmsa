@@ -2,8 +2,9 @@ import numpy as np
 from utility.sample import Memory
 
 class DDM(Memory):
-    def __init__(self, alpha_w, alpha_d, min_memory_len=10):
+    def __init__(self, alpha_w=2, alpha_d=3, min_memory_len=10):
         super().__init__()
+        Memory.__init__(self)
         # self.base_learner = None
         # self.base_learner_is_fitted = False
         self.alpha_w = alpha_w
@@ -76,9 +77,12 @@ class DDM(Memory):
     def update_memory(self):
         if self.change_flag:
             if (self.warning_t is None) or ((self.t - self.warning_t) < self.min_memory_len): ### This means change is detected withough any prior warning
-                self.samples = self.samples[-self.min_memory_len:]
+                # self.samples = self.samples[-self.min_memory_len:]
+                self.forget_before(self.min_memory_len)
             else:
-                self.samples = self.samples[self.warning_t:]
+                # self.samples = self.samples[self.warning_t:]
+                if self.change_flag:
+                    self.forget_before(self.t-self.warning_t)
     
     
     def reset(self):
