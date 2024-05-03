@@ -78,8 +78,6 @@ def run(online_model, dataset_name, synthetic_param):
         if trip_ids[k] not in predicted_trip_ids and k <= num_preview_samples:
             # add the sample to the memory and fit the model
             online_model.update_online_model(X, y, fit_base_learner=True)
-                        # online_model.update_online_model(X, y, fit_base_learner=(k%100==0) and k>num_preview_samples)
-            # print('predicting trip ', trip_ids.shape[0],' ...')
             # build X_trip and y_trip from data_X and data_y where X[0] == trip_id
             X_trip = data_X[trip_ids == trip_ids[k]]
             y_trip = data_y[trip_ids == trip_ids[k]]
@@ -115,8 +113,8 @@ pickle_log = True
 ################ REAL DATA #################
 datasets = [
             # 'Teconer_full',
-            'Teconer_100K',
-            # 'Teconer_road_piece'
+            # 'Teconer_100K',
+            'Teconer_road_piece'
                 ]
 dataset_configs = {'noise_var':     None,
                    'stream_size':   None,

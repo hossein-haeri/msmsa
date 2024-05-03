@@ -26,7 +26,7 @@ class RegressionNN(nn.Module):
         return self.model(x)
     
     def fit(self, X, y):
-        # self.reset()
+        self.reset()
         self.train()  # Set the model to training mode
         self.optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
         X = torch.tensor(X, dtype=torch.float32)

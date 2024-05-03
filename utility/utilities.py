@@ -92,15 +92,18 @@ class Logger:
         self.errors = []
         self.memory_history = [] 
         self.method_name = ''
-        self.val_hor = []
+        # self.val_hor = []
+        self.len_stream = None
 
 
     def rescale(y, scaler):
         return scaler.inverse_transform(np.asarray(y).reshape(-1, 1))
     
-    def log(self, y, y_pred, num_train_samples=None):
+    def log(self, y, y_pred, num_train_samples=None, X=None):
         self.y.append(y)
         self.y_pred.append(y_pred)
+        if X is not None:
+            self.X.append(X)
         self.num_train_samples_list.append(num_train_samples)
         self.errors.append(np.abs(y - y_pred))
         
@@ -115,7 +118,7 @@ class Logger:
         # add R-squared to the summary dictionary
         self.summary['R2'] = 1 - np.sum(np.square(self.errors)) / np.sum(np.square(np.array(self.y) - np.mean(self.y)))
 
-
+        self.len_stream = len(self.y)
         
 
         

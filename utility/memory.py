@@ -84,10 +84,7 @@ class Memory:
     def get_X_with_time(self):
         return self.X[self.active_indices]
 
-    def get_X_with_current_time(self):
-        X_with_current_time = self.get_X_with_time()
-        X_with_current_time[:, 0] = self.current_time
-        return X_with_current_time
+
     
 
     def predict_online_model(self, X):

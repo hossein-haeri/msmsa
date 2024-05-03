@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 import stream_generator
+import torch
 
 # dataset_name = datasets[0]
 def load_dataset(dataset_name, synthetic_param=None, seed=None):
@@ -33,10 +34,22 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         # pickle the df 
         # df.to_pickle(dataset_name+'_records.pkl')
         # print(df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].head())
-        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].to_numpy(dtype=float)
+        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Month ']].to_numpy(dtype=float)
         # data_X = df[['AbsoluteTime','Latitude']].to_numpy(dtype=float)
         trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
+
+         # Move tensors to GPU if CUDA is available
+        # if torch.cuda.is_available():
+        #     # Convert entire dataset to PyTorch tensors
+        #     data_X = torch.tensor(data_X, dtype=torch.float32)
+        #     data_y = torch.tensor(data_y, dtype=torch.float32)
+        
+        #     data_X = data_X.cuda()
+        #     data_y = data_y.cuda()
+    
+
+
 
     if dataset_name == 'Teconer_10K':
         df = pd.read_csv('datasets/Teconer_2018_Jan_light_10K.csv').dropna()
@@ -64,9 +77,10 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         # trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
 
-    if dataset_name == 'Teconer_full':
-        # df = pd.read_csv('datasets/Teconer_2018_Jan_full.csv').dropna()
-        df = pd.read_csv('datasets/Teconer_downtown_full.csv').dropna()
+    if dataset_name == 'Teconer_downtown':
+        # df = pd.read_csv('datasets/Teconer_downtown_10K.csv').dropna()
+        df = pd.read_csv('datasets/Teconer_downtown_100K.csv').dropna()
+        # df = pd.read_csv('datasets/Teconer_downtown_full.csv').dropna()
         # pickle the df 
         df.to_pickle(dataset_name+'_records.pkl')
         data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
@@ -176,7 +190,7 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])
         # data_w = np.array([item[2] for item in stream])
-    
+
     # if 'Hyper' in dataset_name:
         # include time (index) as a feature
     # data_X = np.column_stack((np.arange(len(data_X)), data_X))

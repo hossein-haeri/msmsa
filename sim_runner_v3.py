@@ -39,8 +39,8 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.ensemble import RandomForestRegressor
 
 
-def rescale(y, scaler):
-    return scaler.inverse_transform(np.asarray(y).reshape(-1, 1)).squeeze()
+def rescale(data, scaler):
+    return scaler.inverse_transform(data).squeeze()
 
 
 def run(online_model_name, base_learner_name, dataset_name, synthetic_param, seed=None):
@@ -61,7 +61,7 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
         base_learner = SVR(kernel='rbf', C=10, gamma=0.3, epsilon=.1)
     elif base_learner_name == 'NN':
         # base_learner = learning_models.NeuralNet()
-        base_learner = neural_net_base_learner.RegressionNN(    hidden_layers=[50, 50],
+        base_learner = neural_net_base_learner.RegressionNN(    hidden_layers=[20, 20],
                                                                 input_dim=data_X.shape[1]+1, 
                                                                 output_dim=1,
                                                                 dropout=0.1, 
@@ -107,6 +107,9 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
 
     for k, (X, y) in enumerate(stream_bar):
 
+        # make y noisy
+        y = y + np.random.normal(0, 0.1)
+        
         X_with_time = np.append(k/len(data_y),X).reshape(1,-1)
 
         y_pred = online_model.predict_online_model(X_with_time)[0]
@@ -115,40 +118,30 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
             online_model.update_online_model(X_with_time, y, fit_base_learner=True)
         else:
             online_model.update_online_model(X_with_time, y, fit_base_learner=False)
-    
+
         # retransform y and y_pred back to original scale
-        y = rescale(y, scaler_y)
-        y_pred = rescale(y_pred, scaler_y)
+        y = rescale(np.array(y.reshape(-1,1)), scaler_y)
+        y_pred = rescale(np.array(y_pred).reshape(-1,1), scaler_y)
+        X = rescale(X.reshape(1,-1), scaler_X)
 
         # num_train_samples = len(online_model.samples)
         num_train_samples = online_model.get_num_samples()
-        logger.log(y, y_pred, num_train_samples=num_train_samples)
-        logger.X.append(X)
+        logger.log(y, y_pred, num_train_samples=num_train_samples, X=X)
         stream_bar.set_postfix(MemSize=online_model.X.shape[0], KeepRatio=(num_train_samples)/(k+1))
         if wandb_log:
+            log_dict = {
+                        'run_abs_error': np.abs(y - y_pred),
+                        'run_y': y,
+                        'run_y_pred': y_pred,
+                        'num_train_samples': num_train_samples,
+                        }
             if 'Teconer' in dataset_name:
-                wandb.log({
-                            'run_abs_error': np.abs(y - y_pred),
-                            'run_y': y,
-                            'run_y_pred': y_pred,
-                            'num_train_samples': num_train_samples,
-                            })
+                # log_dict['run_w'] = hyper_w[k]
+                pass
             elif 'Hyper' in dataset_name:
-                wandb.log({
-                            'run_abs_error': np.abs(y - y_pred),
-                            'run_y': y,
-                            'run_y_pred': y_pred,
-                            'run_w': hyper_w[k],
-                            'num_train_samples': num_train_samples,
-                            })
-            else:
-                wandb.log({
-                            'run_abs_error': np.abs(y - y_pred),
-                            'run_y': y,
-                            'run_y_pred': y_pred,
-                            'num_train_samples': num_train_samples,
-                            })
-            # wandb.log({'run_abs_error': np.abs(y - y_pred)})
+                log_dict['run_w'] = hyper_w[k]
+                
+            wandb.log(log_dict)
         
 
     logger.sclaer_y = scaler_y
@@ -177,8 +170,9 @@ online_model_name = sys.argv[2]
 base_learner_name = sys.argv[3]
 seed = sys.argv[4]
 if len(sys.argv) > 5:
-    tag = sys.argv[5]
-
+    tags = sys.argv[5:]
+else:
+    tags = None
 
 
 if 'Hyper' in dataset_name:
@@ -200,12 +194,11 @@ config={
         "base_learner": base_learner_name,
         "seed": seed,
         "synthetic_params": synthetic_param,
-        "tag": tag,
         # "hyperparams": online_model.hyperparams,
     }
 
 if wandb_log:
-        wandb_run = wandb.init(project='stream_learning', entity='haeri-hsn', config=config)
+        wandb_run = wandb.init(project='stream_learning', entity='haeri-hsn', config=config, tags=tags)
 
 
 # print(config)

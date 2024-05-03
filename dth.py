@@ -18,7 +18,7 @@ from utility.memory import Memory
 class DTH(Memory):
     ''''' Time needs to be the first feature in the input data. '''''
     def __init__(self, 
-                 epsilon=0.9,
+                 epsilon=0.8,
                  prior=0.5,
                  num_sub_predictions=50,
                  ):
@@ -38,7 +38,15 @@ class DTH(Memory):
         self.current_time = 0
         self.first_time = True
         self.model_memory = []
+        
+        # make prior a numpy array of size 
+        self.prior
 
+    def get_X_with_current_time(self):
+        X_with_current_time = self.get_X_with_time()
+        X_with_current_time[:, 0] = self.current_time
+        return X_with_current_time
+    
     def update_online_model(self, X, y, fit_base_learner=True, prune_memory=True):
         self.add_sample(X, y)
         if fit_base_learner:
@@ -65,6 +73,9 @@ class DTH(Memory):
         mu_o, sigma_o = self.predict_bulk(X_with_t_o)
         mu_c, sigma_c = self.predict_bulk(X_with_t_c)
 
+        mu_o = self.predict_online_model(X_with_t_o)[0]
+        mu_c = self.predict_online_model(X_with_t_c)[0]
+
         # print(mu_o.shape, sigma_o.shape, mu_c.shape, sigma_c.shape)
         sigma_o = np.maximum(sigma_o, 1e-6)
         sigma_c = np.maximum(sigma_c, 1e-6)
@@ -78,9 +89,13 @@ class DTH(Memory):
 
         prob_original_given_y = (prob_y_original * self.prior) / (prob_y_original * self.prior + prob_y_current * (1 - self.prior))
         
+        # self.prior = prob_original_given_y
 
         # Create a boolean array where the condition is True for samples that should be deactivated
         to_deactivate = (prob_original_given_y > self.epsilon)
+
+        # select only the first 50 samples to deactivate
+
 
         # get the indices of the active samples
         actives = np.where(self.active_indices)[0]
