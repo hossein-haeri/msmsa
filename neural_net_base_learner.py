@@ -75,7 +75,9 @@ class RegressionNN(nn.Module):
         mean = predictions.mean(0)
         std = predictions.std(0)
         # print(mean.numpy().shape, std.numpy().shape)
-        return mean.numpy().squeeze(), std.numpy().squeeze()
+        model_pred = self.model(X).squeeze(1).detach().numpy()
+        return model_pred, std.numpy().squeeze()
+        # return mean.numpy().squeeze(), std.numpy().squeeze()
 
 # The following calls are commented out and should be uncommented only after the user's approval:
 # model = RegressionNN(input_dim=10, hidden_layers=[100, 50])

@@ -90,19 +90,29 @@ class DTH(Memory):
         prob_original_given_y = (prob_y_original * self.prior) / (prob_y_original * self.prior + prob_y_current * (1 - self.prior))
         
         # self.prior = prob_original_given_y
-
+        # print('pr_y_c: ', prob_y_current)
+        # print('pr_y_o: ', prob_y_original)
+        # print('\n')
         # Create a boolean array where the condition is True for samples that should be deactivated
         to_deactivate = (prob_original_given_y > self.epsilon)
-
-        # select only the first 50 samples to deactivate
-
-
-        # get the indices of the active samples
-        actives = np.where(self.active_indices)[0]
+        # count the number of True values in to_deactivate
         if len(to_deactivate) > 0:
-            for i in actives[to_deactivate]:
-                self.active_indices[i] = False
+            self.ratio_deactivate = np.sum(to_deactivate)/len(to_deactivate)
+        # print('to_deactivate ratio:', ratio_deactivate)
+        # get the indices of the active samples in memory
+        actives_ind = np.where(self.is_actives)[0]
+        to_deactivate
+        # print(actives[to_deactivate])
+        if len(to_deactivate) > 0:
+            for i, memory_indx in enumerate(actives_ind[to_deactivate]):
+                # if i < 5 and len(actives_ind)-i > 50:
+                if len(actives_ind)-i > 10:
+                    if (i+1)%5 == 0:
+                        # retrain the base learner
+                        self.fit_base_learner()
+                    self.is_actives[memory_indx] = False
 
+                    # print('Deactivated sample:', memory_indx, 'with prob_y_current:', prob_y_current[memory_indx], '  prob_y_original:', prob_y_original[memory_indx], 'prob_original_given_y:', prob_original_given_y[memory_indx])
 
     def predict_bulk(self, X_batch_with_time):
         if self.base_learner.__class__.__name__ == 'RandomForestRegressor':
@@ -114,12 +124,12 @@ class DTH(Memory):
             
         else:
             # return NotImplementedError
-            raise NotImplementedError
+            # raise NotImplementedError
 
-            # y_pred = np.zeros(len(self.model_memory))
-            # for i, model in enumerate(self.model_memory):
-            #     y_pred[i] = model.predict(X_batch_with_time)[0]
-            # return y_pred[-1], np.std(y_pred)
+            y_pred = np.zeros(len(self.model_memory))
+            for i, model in enumerate(self.model_memory):
+                y_pred[i] = model.predict(X_batch_with_time)[0]
+            return y_pred[-1], np.std(y_pred)
 
 
     
