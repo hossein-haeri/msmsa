@@ -9,7 +9,7 @@ from IPython.display import clear_output
 # %matplotlib qt
 import seaborn as sns
 from scipy.ndimage import gaussian_filter
-
+from sklearn.ensemble import RandomForestRegressor
 
 # import stream_generator
 import learning_models
@@ -42,8 +42,8 @@ def run(online_model, dataset_name, synthetic_param):
         
 
     data_X, data_y, scaler_X, scaler_y, trip_ids = load_dataset(dataset_name, synthetic_param)
-    
-
+ 
+    print('number of unique trips: ', len(np.unique(trip_ids)))
     # if 'Teconer_' in dataset_name:
     #     online_model.anchor_samples = data_X
 
@@ -53,8 +53,8 @@ def run(online_model, dataset_name, synthetic_param):
     # error_list = []
     num_records = len(data_y)
 
-    start_from_k = 0
-    end_at_k = 1_000_000
+    # start_from_k = 0
+    # end_at_k = 1_000_000
     num_preview_samples = 50_000
 
     # # trim the data from the start and end
@@ -63,11 +63,11 @@ def run(online_model, dataset_name, synthetic_param):
     # trip_ids = trip_ids[start_from_k:end_at_k]
 
     # randomly select a subset of the data but keep the order
-    idx = np.random.choice(len(data_y), 1_000_000, replace=False)
-    idx.sort()  # This will sort the indices to maintain the original order
-    data_X = data_X[idx]
-    data_y = data_y[idx]
-    trip_ids = trip_ids[idx]
+    # idx = np.random.choice(len(data_y), 1_000_000, replace=False)
+    # idx.sort()  # This will sort the indices to maintain the original order
+    # data_X = data_X[idx]
+    # data_y = data_y[idx]
+    # trip_ids = trip_ids[idx]
 
     stream_bar = tqdm(zip(data_X, data_y),leave=False, disable=False, total=len(data_y))
     for k, (X, y) in enumerate(stream_bar):
@@ -100,21 +100,22 @@ def run(online_model, dataset_name, synthetic_param):
             online_model.update_online_model(X, y, fit_base_learner=False)
         stream_bar.set_postfix(MemSize=online_model.X.shape[0], Ratio=(online_model.get_num_samples())/(k+1), NumTrips=len(predicted_trip_ids))
 
-    with open('trips_road_piece_dth_with_preview.pkl', 'wb') as f:
+    with open('trips_downtown_full_epsilon6.pkl', 'wb') as f:
     # with open('trips_100K.pkl', 'wb') as f:
         pickle.dump(trips, f)
 
 
-wandb_log = False
+wandb_log = True
 wandb_logrun = False
 pickle_log = True
 
 
 ################ REAL DATA #################
 datasets = [
+            'Teconer_downtown'
             # 'Teconer_full',
             # 'Teconer_100K',
-            'Teconer_road_piece'
+            # 'Teconer_road_piece'
                 ]
 dataset_configs = {'noise_var':     None,
                    'stream_size':   None,
@@ -126,17 +127,18 @@ noise_vars = ['-1']
 
 
 base_learners = [
+            RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=-1, bootstrap=True),
             # learning_models.Linear(),
             # learning_models.DecissionTree(),
             # learning_models.SVReg(),
             # learning_models.NeuralNet()
             # neural_net_base_learner.DNNRegressor()
-            neural_net_base_learner.RegressionNN(    hidden_layers=[50, 50],
-                                                                input_dim=7, 
-                                                                output_dim=1,
-                                                                dropout=0.1, 
-                                                                learning_rate=0.01, 
-                                                                epochs=10)
+            # neural_net_base_learner.RegressionNN(    hidden_layers=[50, 50],
+                                                                # input_dim=7, 
+                                                                # output_dim=1,
+                                                                # dropout=0.1, 
+                                                                # learning_rate=0.01, 
+                                                                # epochs=10)
         ]
 
 
@@ -154,7 +156,7 @@ for monte in tqdm(range(num_monte), position=0, leave=True):
                             # aue.AUE(min_memory_len=10, batch_size=20),
                             # msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=2000, continuous_model_fit=False),
                             # davar_reg.DAVAR(lam=10),
-                            dth.DTH(),
+                            dth.DTH(epsilon=0.6),
                             # kswin_reg.KSWIN(),
                             # adwin_reg.ADWIN(delta=0.002),
                             # ddm_reg.DDM(alpha_w=2, alpha_d=3),

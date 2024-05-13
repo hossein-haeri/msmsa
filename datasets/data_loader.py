@@ -79,13 +79,13 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
 
     if dataset_name == 'Teconer_downtown':
         # df = pd.read_csv('datasets/Teconer_downtown_10K.csv').dropna()
-        df = pd.read_csv('datasets/Teconer_downtown_100K.csv').dropna()
-        # df = pd.read_csv('datasets/Teconer_downtown_full.csv').dropna()
+        # df = pd.read_csv('datasets/Teconer_downtown_100K.csv').dropna()
+        df = pd.read_csv('datasets/Teconer_downtown_full.csv').dropna()
         # pickle the df 
         df.to_pickle(dataset_name+'_records.pkl')
         data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
         # data_X = df[['Latitude', 'Longitude']].to_numpy()
-        # trip_ids = df['TripID'].to_numpy(dtype=int)
+        trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
         # add Gaussian noise to Friction values with std = 0.1
         # data_y = data_y + np.random.normal(0, 0.4, len(data_y))
@@ -199,6 +199,8 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
     scaler_y = StandardScaler()
     data_y = scaler_y.fit_transform(data_y.reshape(-1, 1)).squeeze()
     if 'Teconer_road_piece' in dataset_name:
+        return data_X, data_y, scaler_X, scaler_y, trip_ids
+    if 'Teconer_downtown' in dataset_name:
         return data_X, data_y, scaler_X, scaler_y, trip_ids
     # else:
     #     return data_X, data_y, scaler_X, scaler_y
