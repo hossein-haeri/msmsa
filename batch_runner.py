@@ -6,33 +6,41 @@ import sys
 import time
 # List of dataset names
 # wandb_enable = True
-datasets = ['Hyper-A', 'Hyper-I', 'Hyper-G', 'Hyper-LN', 'Hyper-RW', 'Hyper-GU',
-# datasets = ['Hyper-A']
-# datasets = [
+datasets = [
+            # 'Hyper-HT',
+
+            # 'Hyper-A',
+            # 'Hyper-I',
+            # 'Hyper-G',
+            # 'Hyper-LN',
+            # 'Hyper-RW',
+            # 'Hyper-GU',
+              
             'Bike (daily)',
             'Bike (hourly)',
             'Household energy',
             'Melbourne housing',
             'Air quality',
             # 'Friction',
-            # 'NYC taxi',
+            'NYC taxi',
             # 'Teconer_100K',
             # 'Teconer_10K'
 ]
 
+tag = 'real_world_test'
 # List of methods
-methods = ['DTH', 'KSWIN', 'Naive']
+methods = ['DTH', 'KSWIN']
 # methods = ['DTH']
 
 # List of base learners
 base_learners = ['NN']
 
 # Number of repetitions
-repetitions = 50
+repetitions = 10
 
 # Function to run the command silently
-def run_simulation(dataset, method, base_learner, seed):
-    command = f"python sim_runner_v3.py {dataset} {method} {base_learner} {seed} {'nn batch analysis'}"
+def run_simulation(dataset, method, base_learner, seed, tag):
+    command = f"python sim_runner_v3.py '{dataset}' {method} {base_learner} {seed} {tag}"
     subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     # subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
     print(f"Executed: {dataset}, {method}, {base_learner}, seed:{seed}")
@@ -46,7 +54,7 @@ def execute_round(seed):
         for dataset in datasets:
             for method in methods:
                 for base_learner in base_learners:
-                    tasks.append(executor.submit(run_simulation, dataset, method, base_learner, seed))
+                    tasks.append(executor.submit(run_simulation, dataset, method, base_learner, seed, tag))
         # Wait for all tasks in the current round to complete
         for future in tasks:
             future.result()  # This line will block until the individual task is completed

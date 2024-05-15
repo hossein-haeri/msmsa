@@ -61,7 +61,7 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
         base_learner = SVR(kernel='rbf', C=10, gamma=0.3, epsilon=.1)
     elif base_learner_name == 'NN':
         # base_learner = learning_models.NeuralNet()
-        base_learner = neural_net_base_learner.RegressionNN(    hidden_layers=[20, 20],
+        base_learner = neural_net_base_learner.RegressionNN(    hidden_layers=[50, 50],
                                                                 input_dim=data_X.shape[1]+1, 
                                                                 output_dim=1,
                                                                 dropout=0.1, 
@@ -179,13 +179,9 @@ if 'Hyper' in dataset_name:
     synthetic_param = {'noise_var': 0.01, # [0, 1, 2, 3, 4, 5]
                        'stream_size': 1_000,
                        'drift_prob':0.005,
-                       'dim': 5}
+                       'dim': 1}
 else:
     synthetic_param = None
-
-
-
-
 
 
 config={

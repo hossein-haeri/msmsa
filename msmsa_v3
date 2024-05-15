@@ -4,13 +4,14 @@ import learning_models
 from collections import deque
 import copy
 import sys
-
+from utility.memory import Memory
 from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
 
-class MSMSA:
+class MSMSA(Memory):
 
     def __init__(self, lam=0.8, min_memory_len=10, update_freq_factor=1, num_anchors = 1000, max_horizon=50000, continuous_model_fit=True):
+        super().__init__()
         self.max_horizon = max_horizon
         self.base_learner = None
         self.base_learner_is_fitted = False
@@ -57,7 +58,7 @@ class MSMSA:
     #         self.memory[-self.memory_size:]
     #     self.t += 1
 
-    def update_online_model(self, X, y):
+    def update_online_model(self, X, y, fit_base_learner=True):
         self.add_sample(X, y)
         if self.t > 1:
             for i, tau in enumerate(self.hor_candids):

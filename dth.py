@@ -20,7 +20,7 @@ class DTH(Memory):
     def __init__(self, 
                  epsilon=0.8,
                  prior=0.5,
-                 num_sub_predictions=50,
+                 num_sub_predictions=20,
                  ):
         super().__init__()
 

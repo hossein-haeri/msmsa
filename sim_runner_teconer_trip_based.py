@@ -75,7 +75,7 @@ def run(online_model, dataset_name, synthetic_param):
 
         X = X.reshape(1,-1)
         
-        if trip_ids[k] not in predicted_trip_ids and k <= num_preview_samples:
+        if trip_ids[k] not in predicted_trip_ids:
             # add the sample to the memory and fit the model
             online_model.update_online_model(X, y, fit_base_learner=True)
             # build X_trip and y_trip from data_X and data_y where X[0] == trip_id
@@ -100,7 +100,8 @@ def run(online_model, dataset_name, synthetic_param):
             online_model.update_online_model(X, y, fit_base_learner=False)
         stream_bar.set_postfix(MemSize=online_model.X.shape[0], Ratio=(online_model.get_num_samples())/(k+1), NumTrips=len(predicted_trip_ids))
 
-    with open('trips_downtown_full_epsilon6.pkl', 'wb') as f:
+    with open('trips_100K_dth.pkl', 'wb') as f:
+    # with open('trips_downtown_full.pkl', 'wb') as f:
     # with open('trips_100K.pkl', 'wb') as f:
         pickle.dump(trips, f)
 
@@ -112,9 +113,10 @@ pickle_log = True
 
 ################ REAL DATA #################
 datasets = [
-            'Teconer_downtown'
+            # 'Teconer_downtown'
             # 'Teconer_full',
-            # 'Teconer_100K',
+            'Teconer_100K',
+            # 'Teconer_1M',
             # 'Teconer_road_piece'
                 ]
 dataset_configs = {'noise_var':     None,
@@ -133,12 +135,12 @@ base_learners = [
             # learning_models.SVReg(),
             # learning_models.NeuralNet()
             # neural_net_base_learner.DNNRegressor()
-            # neural_net_base_learner.RegressionNN(    hidden_layers=[50, 50],
-                                                                # input_dim=7, 
-                                                                # output_dim=1,
-                                                                # dropout=0.1, 
-                                                                # learning_rate=0.01, 
-                                                                # epochs=10)
+            # neural_net_base_learner.RegressionNN(    hidden_layers=[50, 50, 50],
+            #                                                     input_dim=8, 
+            #                                                     output_dim=1,
+            #                                                     dropout=0.1, 
+            #                                                     learning_rate=0.01, 
+            #                                                     epochs=20)
         ]
 
 
@@ -156,7 +158,7 @@ for monte in tqdm(range(num_monte), position=0, leave=True):
                             # aue.AUE(min_memory_len=10, batch_size=20),
                             # msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=2000, continuous_model_fit=False),
                             # davar_reg.DAVAR(lam=10),
-                            dth.DTH(epsilon=0.6),
+                            dth.DTH(epsilon=0.8),
                             # kswin_reg.KSWIN(),
                             # adwin_reg.ADWIN(delta=0.002),
                             # ddm_reg.DDM(alpha_w=2, alpha_d=3),
