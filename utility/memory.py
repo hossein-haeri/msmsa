@@ -72,18 +72,41 @@ class Memory:
             return 0
         return np.sum(self.is_actives)
         
-    def get_X(self):
-        return self.X[self.is_actives, 1:]
+    # def get_X(self):
+    #     return self.X[self.is_actives, 1:]
     
-    def get_y(self):
-        return self.y[self.is_actives]
+    # def get_y(self):
+    #     return self.y[self.is_actives]
     
-    def get_t(self):
-        return self.X[self.is_actives, 0]
+    # def get_t(self):
+    #     return self.X[self.is_actives, 0]
     
-    def get_X_with_time(self):
-        return self.X[self.is_actives]
+    # def get_X_with_time(self):
+    #     return self.X[self.is_actives]
 
+    def get_X(self, only_last=None):
+        active_indices = np.flatnonzero(self.is_actives)
+        if only_last is not None:
+            active_indices = active_indices[-only_last:]
+        return self.X[active_indices, 1:]
+    
+    def get_y(self, only_last=None):
+        active_indices = np.flatnonzero(self.is_actives)
+        if only_last is not None:
+            active_indices = active_indices[-only_last:]
+        return self.y[active_indices]
+    
+    def get_t(self, only_last=None):
+        active_indices = np.flatnonzero(self.is_actives)
+        if only_last is not None:
+            active_indices = active_indices[-only_last:]
+        return self.X[active_indices, 0]
+    
+    def get_X_with_time(self, only_last=None):
+        active_indices = np.flatnonzero(self.is_actives)
+        if only_last is not None:
+            active_indices = active_indices[-only_last:]
+        return self.X[active_indices]
 
     
 
@@ -100,11 +123,14 @@ class Memory:
         return np.mean(np.absolute(y_true - y_pred))
     
 
-    def fit_to_memory(self):
+    def fit_to_memory(self, only_last=None):
         if self.get_num_samples() < 1:
             print('No active samples in memory to fit')
             return
-        self.base_learner.fit(self.get_X_with_time(), self.get_y())
+        if only_last is not None:
+            self.base_learner.fit(self.get_X_with_time(only_last), self.get_y(only_last))
+        else:
+            self.base_learner.fit(self.get_X_with_time(), self.get_y())
         self.base_learner_is_fitted = True
 
 

@@ -21,15 +21,20 @@ datasets = [
             'Household energy',
             'Melbourne housing',
             'Air quality',
+
             # 'Friction',
-            'NYC taxi',
+            # 'NYC taxi',
             # 'Teconer_100K',
             # 'Teconer_10K'
 ]
 
 tag = 'real_world_test'
 # List of methods
-methods = ['DTH', 'KSWIN']
+methods = [
+            # 'DTH',
+            # 'KSWIN',
+            'MSMSA',
+            ]
 # methods = ['DTH']
 
 # List of base learners
@@ -37,10 +42,9 @@ base_learners = ['NN']
 
 # Number of repetitions
 repetitions = 10
-
 # Function to run the command silently
 def run_simulation(dataset, method, base_learner, seed, tag):
-    command = f"python sim_runner_v3.py '{dataset}' {method} {base_learner} {seed} {tag}"
+    command = f'python sim_runner_v3.py "{dataset}" {method} {base_learner} {seed} {tag}'
     subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     # subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
     print(f"Executed: {dataset}, {method}, {base_learner}, seed:{seed}")
@@ -60,8 +64,9 @@ def execute_round(seed):
             future.result()  # This line will block until the individual task is completed
 
 # Loop for each repetition
+seed = 1000
 for i in range(repetitions):
-    seed = np.random.randint(0, 1000)
+    seed += 1
     print(f"Starting repetition {i+1}")
     execute_round(seed)
     print(f"Finished repetition {i+1}")

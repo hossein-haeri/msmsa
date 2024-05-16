@@ -23,7 +23,7 @@ from baselines_v2 import kswin_reg
 from baselines_v2 import ph_reg
 from baselines_v2 import naive_reg
 from baselines_v2 import aue_reg as aue
-import msmsa_v2 as msmsa
+import msmsa_v3 as msmsa
 import msmsa_plus_v2 as msmsa_plus
 import dth
 import neural_net_base_learner
@@ -49,7 +49,7 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
 
     if base_learner_name == 'RF':
         # base_learner = learning_models.RandomForest(n_estimators=20, bootstrap=True, n_jobs=-1, max_depth=7)
-        base_learner = RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=-1, bootstrap=True)
+        base_learner = RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=1, bootstrap=True)
     elif base_learner_name == 'LNR':
         # base_learner = learning_models.Linear()
         base_learner = Ridge(alpha=0.1, fit_intercept = True)
@@ -125,7 +125,10 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
         X = rescale(X.reshape(1,-1), scaler_X)
 
         # num_train_samples = len(online_model.samples)
-        num_train_samples = online_model.get_num_samples()
+        if 'MSMSA' in online_model.method_name:
+            num_train_samples = online_model.validity_horizon
+        else:
+            num_train_samples = online_model.get_num_samples()
         logger.log(y, y_pred, num_train_samples=num_train_samples, X=X)
         stream_bar.set_postfix(MemSize=online_model.X.shape[0], KeepRatio=(num_train_samples)/(k+1))
         if wandb_log:
@@ -179,7 +182,7 @@ if 'Hyper' in dataset_name:
     synthetic_param = {'noise_var': 0.01, # [0, 1, 2, 3, 4, 5]
                        'stream_size': 1_000,
                        'drift_prob':0.005,
-                       'dim': 1}
+                       'dim': 5}
 else:
     synthetic_param = None
 
