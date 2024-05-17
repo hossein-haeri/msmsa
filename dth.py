@@ -17,10 +17,11 @@ from utility.memory import Memory
         
 class DTH(Memory):
     ''''' Time needs to be the first feature in the input data. '''''
-    def __init__(self, 
-                 epsilon=0.8,
+    def __init__(self,
+                 epsilon=0.9,
                  prior=0.5,
                  num_sub_predictions=20,
+                 min_memory_len=10,
                  ):
         super().__init__()
 
@@ -28,9 +29,17 @@ class DTH(Memory):
         self.epsilon = epsilon
         self.prior = prior
         self.num_sub_predictions = num_sub_predictions
+        self.min_memory_len = min_memory_len
+        self.max_elimination_per_pruning = 20
+        # self.max_assessments_per_pruning = 100
         self.hyperparams = {'epsilon':epsilon,
-                        'prior':prior,
-                        'num_sub_predictions':num_sub_predictions
+                            'prior':prior,
+                            'num_sub_predictions':num_sub_predictions,
+                            'min_memory_len':min_memory_len,
+                            'max_elimination_per_pruning':self.max_elimination_per_pruning,
+                            # 'num_eliminations_per_assessment':self.num_eliminations_per_assessment,
+                            # 'max_assessments_per_pruning':self.max_assessments_per_pruning,
+
                           }
         #### initialization
         self.method_name = 'DTH'
@@ -43,8 +52,8 @@ class DTH(Memory):
         self.prior
 
     def get_X_with_current_time(self):
-        X_with_current_time = self.get_X_with_time()
-        X_with_current_time[:, 0] = self.current_time
+        X_with_current_time = self.get_X()
+        X_with_current_time[:, 0] = np.full_like(X_with_current_time[:, 0], self.current_time)
         return X_with_current_time
     
     def update_online_model(self, X, y, fit_base_learner=True, prune_memory=True):
@@ -53,20 +62,76 @@ class DTH(Memory):
             self.fit_base_learner()
             self.first_time = False
             # if prune_memory and len(self.model_memory) >= 50:
-            if prune_memory and self.get_num_samples() >= 10:
-                    self.prune_memory()
+            if prune_memory:
+                    max_eliminations = min(max(0, self.get_num_samples() - self.min_memory_len), self.max_elimination_per_pruning)
+                    if max_eliminations > 0:
+                        self.prune_memory(max_eliminations)
 
     def fit_base_learner(self):
-
             self.fit_to_memory()
-
-            # self.model_memory.append(copy.deepcopy(self.base_learner))
-            # if len(self.model_memory) > 50:
-            #     self.model_memory.pop(0)
     
-    def prune_memory(self):
+    # def prune_memory_old(self):
 
-        X_with_t_o = self.get_X_with_time()
+    #     elimination_prob = self.assess_memory()
+
+    #     # Create a boolean array where the condition is True for samples that should be deactivated
+    #     to_deactivate = (elimination_prob > self.epsilon)
+    #     # count the number of True values in to_deactivate
+    #     if len(to_deactivate) > 0:
+    #         self.ratio_deactivate = np.sum(to_deactivate)/len(to_deactivate)
+    #     # get the indices of the active samples in memory
+    #     actives_ind = np.where(self.is_actives)[0]
+    #     to_deactivate
+    #     if len(to_deactivate) > 0:
+
+    #         # for i, memory_indx in enumerate(actives_ind[to_deactivate]):
+    #         #     if len(actives_ind)-i > self.min_memory_len:
+    #         #         self.is_actives[memory_indx] = False
+
+    #         num_eliminations = 5
+    #         # Get the indices of the samples to deactivate, sorted by their elimination probabilities in descending order
+    #         to_deactivate_indices = np.argsort(elimination_prob[to_deactivate])[::-1][:num_eliminations]
+
+    #                 # Deactivate the top 5 samples based on their elimination probabilities
+    #         for i in to_deactivate_indices:
+    #             if len(actives_ind) - np.sum(~self.is_actives) > self.min_memory_len:
+    #                 self.is_actives[actives_ind[to_deactivate][i]] = False
+
+    def prune_memory(self, max_eliminations):
+        eliminated_count = 0
+        
+        elimination_prob = self.assess_memory()
+
+        # Create a boolean array where the condition is True for samples that should be eliminated (deactivated)
+        to_deactivate = (elimination_prob > self.epsilon)
+
+        
+        # to_deactivate_indices = np.argsort(elimination_prob[to_deactivate])[::-1][:max_eliminations]
+
+        # Check the number of samples eligible for elimination
+        num_eligibles = np.sum(to_deactivate)
+        
+        # Get the indices of the active samples in memory
+        actives_ind = np.flatnonzero(self.is_actives)
+        
+
+        for i, memory_indx in enumerate(actives_ind[to_deactivate]):
+            if i < max_eliminations:
+                self.is_actives[memory_indx] = False
+
+
+        # Deactivate the top 5 samples based on their elimination probabilities
+        # for i in to_deactivate_indices:
+        #     # if len(actives_ind) - np.sum(~self.is_actives) > self.min_memory_len:
+        #     self.is_actives[actives_ind[to_deactivate][i]] = False
+        #     eliminated_count += 1
+
+
+    def assess_memory(self):
+
+        self.fit_base_learner()
+
+        X_with_t_o = self.get_X()
         X_with_t_c = self.get_X_with_current_time()
         y = self.get_y()
 
@@ -88,36 +153,15 @@ class DTH(Memory):
         
 
         prob_original_given_y = (prob_y_original * self.prior) / (prob_y_original * self.prior + prob_y_current * (1 - self.prior))
-        
-        # self.prior = prob_original_given_y
-        # print('pr_y_c: ', prob_y_current)
-        # print('pr_y_o: ', prob_y_original)
-        # print('\n')
-        # Create a boolean array where the condition is True for samples that should be deactivated
-        to_deactivate = (prob_original_given_y > self.epsilon)
-        # count the number of True values in to_deactivate
-        if len(to_deactivate) > 0:
-            self.ratio_deactivate = np.sum(to_deactivate)/len(to_deactivate)
-        # print('to_deactivate ratio:', ratio_deactivate)
-        # get the indices of the active samples in memory
-        actives_ind = np.where(self.is_actives)[0]
-        to_deactivate
-        # print(actives[to_deactivate])
-        if len(to_deactivate) > 0:
-            for i, memory_indx in enumerate(actives_ind[to_deactivate]):
-                # if i < 5 and len(actives_ind)-i > 50:
-                if len(actives_ind)-i > 10:
-                    if (i+1)%5 == 0:
-                        # retrain the base learner
-                        self.fit_base_learner()
-                    self.is_actives[memory_indx] = False
+    
+        return prob_original_given_y
 
-                    # print('Deactivated sample:', memory_indx, 'with prob_y_current:', prob_y_current[memory_indx], '  prob_y_original:', prob_y_original[memory_indx], 'prob_original_given_y:', prob_original_given_y[memory_indx])
 
     def predict_bulk(self, X_batch_with_time):
         if self.base_learner.__class__.__name__ == 'RandomForestRegressor':
             tree_predictions =  [tree.predict(X_batch_with_time) for tree in self.base_learner.estimators_]
-            return np.mean(tree_predictions, axis=0), np.std(tree_predictions, axis=0)
+            return self.base_learner.predict(X_batch_with_time), np.std(tree_predictions, axis=0)
+            # return np.mean(tree_predictions, axis=0), np.std(tree_predictions, axis=0)
 
         elif self.base_learner.__class__.__name__ == 'RegressionNN':
             return self.base_learner.make_uncertain_predictions(X_batch_with_time, num_samples=self.num_sub_predictions)

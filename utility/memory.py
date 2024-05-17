@@ -84,29 +84,44 @@ class Memory:
     # def get_X_with_time(self):
     #     return self.X[self.is_actives]
 
-    def get_X(self, only_last=None):
-        active_indices = np.flatnonzero(self.is_actives)
-        if only_last is not None:
-            active_indices = active_indices[-only_last:]
-        return self.X[active_indices, 1:]
+    # def get_X(self, only_last=None):
+    #     if only_last is None:
+    #         return self.X[self.is_actives]
+    #     else:
+    #         active_indices = np.flatnonzero(self.is_actives)
+    #         active_indices = active_indices[-only_last:]
+    #         return self.X[active_indices]
     
     def get_y(self, only_last=None):
-        active_indices = np.flatnonzero(self.is_actives)
-        if only_last is not None:
+        if only_last is None:
+            return self.y[self.is_actives]
+        else:
+            active_indices = np.flatnonzero(self.is_actives)
             active_indices = active_indices[-only_last:]
-        return self.y[active_indices]
+            return self.y[active_indices]
     
     def get_t(self, only_last=None):
-        active_indices = np.flatnonzero(self.is_actives)
-        if only_last is not None:
+        if only_last is None:
+            return self.X[self.is_actives, 0]
+        else:
+            active_indices = np.flatnonzero(self.is_actives)
             active_indices = active_indices[-only_last:]
-        return self.X[active_indices, 0]
+            return self.X[self.is_actives, 0]
     
-    def get_X_with_time(self, only_last=None):
-        active_indices = np.flatnonzero(self.is_actives)
-        if only_last is not None:
+    def get_X(self, with_time=True, only_last=None):
+        if only_last is None:
+            if with_time:
+                return self.X[self.is_actives]
+            else:
+                return self.X[self.is_actives, 1:]
+        else:
+            active_indices = np.flatnonzero(self.is_actives)
             active_indices = active_indices[-only_last:]
-        return self.X[active_indices]
+            if with_time:
+                return self.X[active_indices]
+            else:
+                return self.X[active_indices, 1:]
+
 
     
 
@@ -128,9 +143,9 @@ class Memory:
             print('No active samples in memory to fit')
             return
         if only_last is not None:
-            self.base_learner.fit(self.get_X_with_time(only_last), self.get_y(only_last))
+            self.base_learner.fit(self.get_X(only_last=only_last), self.get_y(only_last=only_last))
         else:
-            self.base_learner.fit(self.get_X_with_time(), self.get_y())
+            self.base_learner.fit(self.get_X(), self.get_y())
         self.base_learner_is_fitted = True
 
 

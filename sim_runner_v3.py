@@ -49,7 +49,7 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
 
     if base_learner_name == 'RF':
         # base_learner = learning_models.RandomForest(n_estimators=20, bootstrap=True, n_jobs=-1, max_depth=7)
-        base_learner = RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=1, bootstrap=True)
+        base_learner = RandomForestRegressor(n_estimators=50, max_depth=7, n_jobs=4, bootstrap=True, max_samples=0.2)
     elif base_learner_name == 'LNR':
         # base_learner = learning_models.Linear()
         base_learner = Ridge(alpha=0.1, fit_intercept = True)
@@ -114,7 +114,7 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
 
         y_pred = online_model.predict_online_model(X_with_time)[0]
 
-        if k%100 == 0:
+        if k%1 == 0:
             online_model.update_online_model(X_with_time, y, fit_base_learner=True)
         else:
             online_model.update_online_model(X_with_time, y, fit_base_learner=False)

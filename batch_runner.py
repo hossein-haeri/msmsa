@@ -28,17 +28,17 @@ datasets = [
             # 'Teconer_10K'
 ]
 
-tag = 'real_world_test'
+tag = 'real_world_new_dth'
 # List of methods
 methods = [
-            # 'DTH',
-            # 'KSWIN',
+            'DTH',
+            'KSWIN',
             'MSMSA',
             ]
 # methods = ['DTH']
 
 # List of base learners
-base_learners = ['NN']
+base_learners = ['RF']
 
 # Number of repetitions
 repetitions = 10
