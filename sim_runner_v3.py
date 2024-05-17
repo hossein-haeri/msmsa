@@ -37,7 +37,8 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import SVR
 from sklearn.neural_network import MLPRegressor
 from sklearn.ensemble import RandomForestRegressor
-
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 def rescale(data, scaler):
     return scaler.inverse_transform(data).squeeze()
@@ -49,7 +50,9 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
 
     if base_learner_name == 'RF':
         # base_learner = learning_models.RandomForest(n_estimators=20, bootstrap=True, n_jobs=-1, max_depth=7)
-        base_learner = RandomForestRegressor(n_estimators=50, max_depth=7, n_jobs=4, bootstrap=True, max_samples=0.2)
+        # base_learner = RandomForestRegressor(n_estimators=50, max_depth=7, n_jobs=4, bootstrap=True, max_samples=0.8)
+        base_learner = make_pipeline(StandardScaler(), RandomForestRegressor(n_estimators=50, max_depth=7, n_jobs=4, bootstrap=True, max_samples=0.8))
+        base_learner.__class__.__name__ = 'RandomForestRegressor'
     elif base_learner_name == 'LNR':
         # base_learner = learning_models.Linear()
         base_learner = Ridge(alpha=0.1, fit_intercept = True)
@@ -96,6 +99,8 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
 
     online_model.base_learner = base_learner
 
+    base_learner_param = online_model.base_learner.get_params()
+    
     logger = Logger()
 
     y_pred = 0
@@ -151,6 +156,7 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
     logger.scaler_X = scaler_X
     logger.method_name = online_model.method_name
     logger.hyperparams = online_model.hyperparams
+    logger.hyperparams['base_learner_params'] = base_learner_param
     logger.summary['mean_memory_size'] = np.mean(logger.num_train_samples_list)
     logger.summary['MAE'] = np.mean(logger.errors)
     logger.summary['RMSE'] = np.sqrt(np.mean(np.square(logger.errors)))
@@ -178,11 +184,12 @@ else:
     tags = None
 
 
+
 if 'Hyper' in dataset_name:
-    synthetic_param = {'noise_var': 0.01, # [0, 1, 2, 3, 4, 5]
+    synthetic_param = {'noise_var': 1, # [0, 1, 2, 3, 4, 5]
                        'stream_size': 1_000,
                        'drift_prob':0.005,
-                       'dim': 5}
+                       'dim': 10}
 else:
     synthetic_param = None
 

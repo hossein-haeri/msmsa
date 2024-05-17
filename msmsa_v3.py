@@ -54,7 +54,7 @@ class MSMSA(Memory):
             # if there are enough number of new samples to build a model across this horizon
             if self.t%tau == 0:
                 # create a new model across this horizon (tau)
-                self.models[tau_indx].fit(self.get_X_with_time(only_last=tau), self.get_y(only_last=tau))
+                self.models[tau_indx].fit(self.get_X(only_last=tau), self.get_y(only_last=tau))
                 # get the prediction of the model at the anchor points
                 new_anchor_preds = self.models[tau_indx].predict(self.anchors).squeeze()
                 

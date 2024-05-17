@@ -159,7 +159,7 @@ class DTH(Memory):
 
     def predict_bulk(self, X_batch_with_time):
         if self.base_learner.__class__.__name__ == 'RandomForestRegressor':
-            tree_predictions =  [tree.predict(X_batch_with_time) for tree in self.base_learner.estimators_]
+            tree_predictions =  [tree.predict(X_batch_with_time) for tree in self.base_learner.named_steps['randomforestregressor'].estimators_]
             return self.base_learner.predict(X_batch_with_time), np.std(tree_predictions, axis=0)
             # return np.mean(tree_predictions, axis=0), np.std(tree_predictions, axis=0)
 

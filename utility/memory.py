@@ -1,5 +1,5 @@
 import numpy as np
-
+from sklearn.preprocessing import StandardScaler
 
 class Memory:
     def __init__(self, max_num_samples=None, num_features=None):
