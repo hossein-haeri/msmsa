@@ -9,12 +9,12 @@ import time
 datasets = [
             # 'Hyper-HT',
 
-            # 'Hyper-A',
-            # 'Hyper-I',
-            # 'Hyper-G',
-            # 'Hyper-LN',
-            # 'Hyper-RW',
-            # 'Hyper-GU',
+            'Hyper-A',
+            'Hyper-I',
+            'Hyper-G',
+            'Hyper-LN',
+            'Hyper-RW',
+            'Hyper-GU',
               
             'Bike (daily)',
             'Bike (hourly)',
@@ -28,7 +28,7 @@ datasets = [
             # 'Teconer_10K'
 ]
 
-tag = 'real_world_new_dth'
+tag = 'real_world_thursday_night'
 # List of methods
 methods = [
             'DTH',

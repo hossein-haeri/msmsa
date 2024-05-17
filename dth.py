@@ -18,7 +18,7 @@ from utility.memory import Memory
 class DTH(Memory):
     ''''' Time needs to be the first feature in the input data. '''''
     def __init__(self,
-                 epsilon=0.9,
+                 epsilon=0.8,
                  prior=0.5,
                  num_sub_predictions=20,
                  min_memory_len=10,
@@ -30,7 +30,7 @@ class DTH(Memory):
         self.prior = prior
         self.num_sub_predictions = num_sub_predictions
         self.min_memory_len = min_memory_len
-        self.max_elimination_per_pruning = 20
+        self.max_elimination_per_pruning = 10
         # self.max_assessments_per_pruning = 100
         self.hyperparams = {'epsilon':epsilon,
                             'prior':prior,
