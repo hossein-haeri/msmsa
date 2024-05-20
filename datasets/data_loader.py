@@ -185,6 +185,13 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         data_y = np.array([item[1] for item in stream])
         data_w = np.array([item[2] for item in stream])
 
+    if dataset_name == 'Hyper-HT':
+        stream = stream_generator.hyper_abrupt_half_drift(synthetic_param, seed=seed)
+        # print(stream[0])
+        data_X = np.array([item[0] for item in stream])
+        data_y = np.array([item[1] for item in stream])
+        data_w = np.array([item[2] for item in stream])
+
     if dataset_name == 'SimpleHeterogeneous':
         stream = stream_generator.simple_heterogeneous(synthetic_param, seed=seed)
         # print(stream[0])

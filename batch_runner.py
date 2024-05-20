@@ -7,20 +7,20 @@ import time
 # List of dataset names
 # wandb_enable = True
 datasets = [
-            # 'Hyper-HT',
+            'Hyper-HT',
 
-            'Hyper-A',
-            'Hyper-I',
-            'Hyper-G',
-            'Hyper-LN',
-            'Hyper-RW',
-            'Hyper-GU',
+            # 'Hyper-A',
+            # 'Hyper-I',
+            # 'Hyper-G',
+            # 'Hyper-LN',
+            # 'Hyper-RW',
+            # 'Hyper-GU',
               
-            'Bike (daily)',
-            'Bike (hourly)',
-            'Household energy',
-            'Melbourne housing',
-            'Air quality',
+            # 'Bike (daily)',
+            # 'Bike (hourly)',
+            # 'Household energy',
+            # 'Melbourne housing',
+            # 'Air quality',
 
             # 'Friction',
             # 'NYC taxi',

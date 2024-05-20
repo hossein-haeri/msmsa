@@ -1,6 +1,40 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
+def hyper_abrupt_half_drift(systhetic_param, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
+    stream_size = systhetic_param['stream_size']
+    noise_var = systhetic_param['noise_var']
+    hyperplane_dimension = systhetic_param['dim']
+    drift_probability = systhetic_param['drift_prob']
+
+    stream = []
+    # initialize and normalize w
+    w_initial = np.random.normal(0,scale=1,size=hyperplane_dimension)
+    w = w_initial
+    # select a random dimension
+    no_drift_dim = np.random.randint(0, hyperplane_dimension)
+
+    # w = w / np.linalg.norm(w)
+    for k in range(stream_size):
+        if np.random.uniform() < drift_probability and drift_probability != -1:
+            w = np.random.normal(0, scale=1, size=hyperplane_dimension)
+            # w = w / np.linalg.norm(w)
+        if drift_probability == -1 and k == int(stream_size/2):
+            # w = w / np.linalg.norm(w)
+            w = np.random.normal(0, scale=1, size=hyperplane_dimension)
+        # draw uniform random samples 
+        X = np.random.uniform(-10, 10, hyperplane_dimension)
+        # create the target parameter using the features
+        if X[no_drift_dim] < 0:
+            y = np.dot(X,w_initial)
+        else:
+            y = np.dot(X,w)
+        # make the stream noisy
+        y = y + np.random.normal(0, noise_var)
+        stream.append([X, y, w])
+    return stream
 
 
 def hyper_abrupt(systhetic_param, seed=None):
