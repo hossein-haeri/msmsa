@@ -28,7 +28,7 @@ datasets = [
             # 'Teconer_10K'
 ]
 
-tag = 'real_world_friday'
+tag = 'hetero_test_monday'
 # List of methods
 methods = [
             'DTH',

@@ -45,7 +45,7 @@ class DTH(Memory):
         self.method_name = 'DTH'
         self.sample_id_counter = 0
         self.current_time = 0
-        self.first_time = True
+        # self.first_time = True
         self.model_memory = []
         
         # make prior a numpy array of size 
@@ -57,18 +57,19 @@ class DTH(Memory):
         return X_with_current_time
     
     def update_online_model(self, X, y, fit_base_learner=True, prune_memory=True):
+        
         self.add_sample(X, y)
         if fit_base_learner:
-            self.fit_base_learner()
-            self.first_time = False
-            # if prune_memory and len(self.model_memory) >= 50:
+            self.fit_to_memory()
+
             if prune_memory:
                     max_eliminations = min(max(0, self.get_num_samples() - self.min_memory_len), self.max_elimination_per_pruning)
                     if max_eliminations > 0:
                         self.prune_memory(max_eliminations)
+                        # pass
 
-    def fit_base_learner(self):
-            self.fit_to_memory()
+    # def fit_base_learner(self):
+    #         self.fit_to_memory()
     
     # def prune_memory_old(self):
 
@@ -109,7 +110,7 @@ class DTH(Memory):
         # to_deactivate_indices = np.argsort(elimination_prob[to_deactivate])[::-1][:max_eliminations]
 
         # Check the number of samples eligible for elimination
-        num_eligibles = np.sum(to_deactivate)
+        # num_eligibles = np.sum(to_deactivate)
         
         # Get the indices of the active samples in memory
         actives_ind = np.flatnonzero(self.is_actives)
@@ -128,8 +129,6 @@ class DTH(Memory):
 
 
     def assess_memory(self):
-
-        self.fit_base_learner()
 
         X_with_t_o = self.get_X()
         X_with_t_c = self.get_X_with_current_time()
@@ -169,11 +168,13 @@ class DTH(Memory):
         else:
             # return NotImplementedError
             # raise NotImplementedError
+            print('NotImplementedError: The base learner is not supported for the bulk prediction.')
+            
 
-            y_pred = np.zeros(len(self.model_memory))
-            for i, model in enumerate(self.model_memory):
-                y_pred[i] = model.predict(X_batch_with_time)[0]
-            return y_pred[-1], np.std(y_pred)
+            # y_pred = np.zeros(len(self.model_memory))
+            # for i, model in enumerate(self.model_memory):
+            #     y_pred[i] = model.predict(X_batch_with_time)[0]
+            # return y_pred[-1], np.std(y_pred)
 
 
     
