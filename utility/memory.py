@@ -1,6 +1,8 @@
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
+
+
 class Memory:
     def __init__(self, max_num_samples=None, num_features=None):
         # make X as an array of shape (num_samples, num_features) with float64 dtype
@@ -13,6 +15,8 @@ class Memory:
         self.base_learner_is_fitted = False
         self.base_learner = None
         self.is_first_sample = True
+        self.max_model_memory_len = 10
+        
 
     def construct_memory(self, X):
         max_num_samples = 1_00
@@ -138,7 +142,7 @@ class Memory:
         return np.mean(np.absolute(y_true - y_pred))
     
 
-    def fit_to_memory(self, only_last=None):
+    def fit_to_memory(self, only_last=None, add_to_model_memory=False):
         if self.get_num_samples() < 1:
             print('No active samples in memory to fit')
             return
@@ -146,7 +150,9 @@ class Memory:
             self.base_learner.fit(self.get_X(only_last=only_last), self.get_y(only_last=only_last))
         else:
             self.base_learner.fit(self.get_X(), self.get_y())
+        
         self.base_learner_is_fitted = True
+        # return self.base_learner
 
 
     def forget_before(self, num_keep_samples):

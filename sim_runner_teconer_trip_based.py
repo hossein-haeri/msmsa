@@ -10,6 +10,8 @@ from IPython.display import clear_output
 import seaborn as sns
 from scipy.ndimage import gaussian_filter
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 # import stream_generator
 import learning_models
@@ -126,10 +128,12 @@ dataset_configs = {'noise_var':     None,
 noise_vars = ['-1']
 
 
+base_learner = make_pipeline(StandardScaler(), RandomForestRegressor(n_estimators=100, max_depth=6, n_jobs=4, bootstrap=True, max_samples=.2))
+base_learner.__class__.__name__ = 'RandomForestRegressor'
 
-
-base_learners = [
-            RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=-1, bootstrap=True),
+base_learners = [base_learner]
+# base_learners = [
+            # RandomForestRegressor(n_estimators=50, max_depth=7, n_jobs=4, bootstrap=True),
             # learning_models.Linear(),
             # learning_models.DecissionTree(),
             # learning_models.SVReg(),
@@ -141,7 +145,7 @@ base_learners = [
             #                                                     dropout=0.1, 
             #                                                     learning_rate=0.01, 
             #                                                     epochs=20)
-        ]
+        # ]
 
 
 num_monte = 1

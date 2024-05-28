@@ -12,22 +12,24 @@ import copy
 # from utility.sample import Sample, Memory
 from utility.memory import Memory
 # import learning_models
-
+from collections import deque
 
         
 class DTH(Memory):
     ''''' Time needs to be the first feature in the input data. '''''
     def __init__(self,
-                 epsilon=0.8,
+                 epsilon=0.9,
                  prior=0.5,
                  num_sub_predictions=20,
                  min_memory_len=10,
+
                  ):
         super().__init__()
 
         ### hyper-parameters
         self.epsilon = epsilon
         self.prior = prior
+        self.sub_prediction_type = 'sub_learners' # 'model_memory'/ 'sub_learners'
         self.num_sub_predictions = num_sub_predictions
         self.min_memory_len = min_memory_len
         self.max_elimination_per_pruning = 10
@@ -46,7 +48,8 @@ class DTH(Memory):
         self.sample_id_counter = 0
         self.current_time = 0
         # self.first_time = True
-        self.model_memory = []
+        self.max_model_memory_len = self.num_sub_predictions
+        self.model_memory = deque(maxlen=self.max_model_memory_len)
         
         # make prior a numpy array of size 
         self.prior
@@ -61,7 +64,8 @@ class DTH(Memory):
         self.add_sample(X, y)
         if fit_base_learner:
             self.fit_to_memory()
-
+            if self.sub_prediction_type == 'model_memory':
+                self.model_memory.append(copy.deepcopy(self.base_learner))
             if prune_memory:
                     max_eliminations = min(max(0, self.get_num_samples() - self.min_memory_len), self.max_elimination_per_pruning)
                     if max_eliminations > 0:
@@ -128,11 +132,15 @@ class DTH(Memory):
         #     eliminated_count += 1
 
 
-    def assess_memory(self):
+    def assess_memory(self, X_with_t_o=None, y=None):
+        if X_with_t_o is None:
+            X_with_t_o = self.get_X()
+            X_with_t_c = self.get_X_with_current_time()
+            y = self.get_y()
+        else:
+            X_with_t_c = X_with_t_o
+            X_with_t_c[:, 0] = np.full_like(X_with_t_c[:, 0], self.current_time)
 
-        X_with_t_o = self.get_X()
-        X_with_t_c = self.get_X_with_current_time()
-        y = self.get_y()
 
         mu_o, sigma_o = self.predict_bulk(X_with_t_o)
         mu_c, sigma_c = self.predict_bulk(X_with_t_c)
@@ -141,14 +149,14 @@ class DTH(Memory):
         mu_c = self.predict_online_model(X_with_t_c)[0]
 
         # print(mu_o.shape, sigma_o.shape, mu_c.shape, sigma_c.shape)
-        sigma_o = np.maximum(sigma_o, 1e-6)
-        sigma_c = np.maximum(sigma_c, 1e-6)
+        sigma_o = np.maximum(sigma_o, 1e-9)
+        sigma_c = np.maximum(sigma_c, 1e-9)
 
         prob_y_current  = np.exp(-0.5 * ((y - mu_c)/sigma_c)**2) / (sigma_c)
         prob_y_original = np.exp(-0.5 * ((y - mu_o)/sigma_o)**2) / (sigma_o)
 
-        prob_y_current = np.maximum(prob_y_current, 1e-6)
-        prob_y_original = np.maximum(prob_y_original, 1e-6)
+        prob_y_current = np.maximum(prob_y_current, 1e-9)
+        prob_y_original = np.maximum(prob_y_original, 1e-9)
         
 
         prob_original_given_y = (prob_y_original * self.prior) / (prob_y_original * self.prior + prob_y_current * (1 - self.prior))
@@ -157,24 +165,42 @@ class DTH(Memory):
 
 
     def predict_bulk(self, X_batch_with_time):
-        if self.base_learner.__class__.__name__ == 'RandomForestRegressor':
-            tree_predictions =  [tree.predict(X_batch_with_time) for tree in self.base_learner.named_steps['randomforestregressor'].estimators_]
-            return self.base_learner.predict(X_batch_with_time), np.std(tree_predictions, axis=0)
-            # return np.mean(tree_predictions, axis=0), np.std(tree_predictions, axis=0)
+        if self.base_learner.__class__.__name__ == 'RandomForestRegressor' and self.sub_prediction_type == 'sub_learners':
+
+            scaler = self.base_learner.named_steps['standardscaler']
+            rf = self.base_learner.named_steps['randomforestregressor']
+
+                        # Transform the input data using the scaler
+            X_scaled = scaler.transform(X_batch_with_time)
+
+            # Get predictions from each individual tree and stack them into a single array
+            tree_predictions = np.array([tree.predict(X_scaled) for tree in rf.estimators_])
+
+            # Compute the mean and standard deviation of the predictions
+            mean_predictions = np.mean(tree_predictions, axis=0)
+            std_predictions = np.std(tree_predictions, axis=0)
+
+            return mean_predictions, std_predictions
 
         elif self.base_learner.__class__.__name__ == 'RegressionNN':
             return self.base_learner.make_uncertain_predictions(X_batch_with_time, num_samples=self.num_sub_predictions)
             
-        else:
+        elif self.sub_prediction_type == 'model_memory':
             # return NotImplementedError
             # raise NotImplementedError
-            print('NotImplementedError: The base learner is not supported for the bulk prediction.')
-            
+            # print('NotImplementedError: The base learner is not supported for the bulk prediction.')
+            scaler = self.base_learner.named_steps['standardscaler']
+            X_scaled = scaler.transform(X_batch_with_time)
 
-            # y_pred = np.zeros(len(self.model_memory))
-            # for i, model in enumerate(self.model_memory):
-            #     y_pred[i] = model.predict(X_batch_with_time)[0]
-            # return y_pred[-1], np.std(y_pred)
+            y_pred = np.zeros(len(self.model_memory))
+            for i, model in enumerate(self.model_memory):
+                y_pred[i] = model.predict(X_scaled)[0]
+            
+            # Compute the mean and standard deviation of the predictions
+            mean_predictions = np.mean(y_pred, axis=0)
+            std_predictions = np.std(y_pred, axis=0)
+
+            return mean_predictions, std_predictions
 
 
     

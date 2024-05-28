@@ -9,12 +9,12 @@ import time
 datasets = [
             'Hyper-HT',
 
-            # 'Hyper-A',
-            # 'Hyper-I',
-            # 'Hyper-G',
-            # 'Hyper-LN',
-            # 'Hyper-RW',
-            # 'Hyper-GU',
+            'Hyper-A',
+            'Hyper-I',
+            'Hyper-G',
+            'Hyper-LN',
+            'Hyper-RW',
+            'Hyper-GU',
               
             # 'Bike (daily)',
             # 'Bike (hourly)',
@@ -28,7 +28,7 @@ datasets = [
             # 'Teconer_10K'
 ]
 
-tag = 'hetero_test_monday'
+tag = 'hyper_thursday'
 # List of methods
 methods = [
             'DTH',
