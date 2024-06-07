@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 class MSMSA(Memory):
 
-    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 1000):
+    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 1000, max_horizon=1000):
         Memory.__init__(self)
         self.method_name = 'MSMSA'
         self.lam = lam
@@ -18,7 +18,7 @@ class MSMSA(Memory):
         self.num_anchors = num_anchors
         self.t = 0
         self.num_candids = 100
-        self.initialize_horizon_candidates(min_horizon=self.min_memory_len, max_horizon=1000, num_candids=self.num_candids)
+        self.initialize_horizon_candidates(min_horizon=self.min_memory_len, max_horizon=max_horizon, num_candids=self.num_candids)
         # self.initialize_anchors()
         # self.models = [[]]*self.num_candids
         self.avars = np.empty([self.num_candids, self.num_anchors])
@@ -86,7 +86,7 @@ class MSMSA(Memory):
             self.validity_horizon = self.t
 
 
-    def index_of_minimum(self, arr): # written by chat-GPT!
+    def index_of_minimum(self, arr): 
         # create a boolean mask to exclude NaN values
         mask = ~np.isnan(arr)
         # use the masked array to find the index of the minimum value

@@ -23,7 +23,7 @@ from baselines_v2 import kswin_reg
 from baselines_v2 import ph_reg
 from baselines_v2 import naive_reg
 from baselines_v2 import aue_reg as aue
-import msmsa_v2 as msmsa
+import msmsa_v3 as msmsa
 import msmsa_plus_v2 as msmsa_plus
 import neural_net_base_learner
 import wandb
@@ -100,9 +100,9 @@ def run(online_model, dataset_name, synthetic_param):
         else:
             # just add the sample to the memory but do not fit the model
             online_model.update_online_model(X, y, fit_base_learner=False)
-        stream_bar.set_postfix(MemSize=online_model.X.shape[0], Ratio=(online_model.get_num_samples())/(k+1), NumTrips=len(predicted_trip_ids))
+        stream_bar.set_postfix(MemSize=online_model.X.shape[0], KeepRatio=(online_model.get_num_samples())/(k+1), NumTrips=len(predicted_trip_ids))
 
-    with open('trips_100K_dth.pkl', 'wb') as f:
+    with open('trips_100K_msmsa.pkl', 'wb') as f:
     # with open('trips_downtown_full.pkl', 'wb') as f:
     # with open('trips_100K.pkl', 'wb') as f:
         pickle.dump(trips, f)
@@ -160,9 +160,9 @@ for monte in tqdm(range(num_monte), position=0, leave=True):
                 online_models = [
                             # msmsa_plus.MSMSA_plus(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=500, continuous_model_fit=False),
                             # aue.AUE(min_memory_len=10, batch_size=20),
-                            # msmsa.MSMSA(min_memory_len=10, update_freq_factor=1, lam=0.8, max_horizon=2000, continuous_model_fit=False),
+                            msmsa.MSMSA(lam=0.8, min_memory_len=10, num_anchors = 1000, max_horizon=10000),
                             # davar_reg.DAVAR(lam=10),
-                            dth.DTH(epsilon=0.8),
+                            # dth.DTH(epsilon=0.8),
                             # kswin_reg.KSWIN(),
                             # adwin_reg.ADWIN(delta=0.002),
                             # ddm_reg.DDM(alpha_w=2, alpha_d=3),
