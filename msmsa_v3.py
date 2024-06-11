@@ -10,30 +10,48 @@ import matplotlib.pyplot as plt
 
 class MSMSA(Memory):
 
-    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 1000, max_horizon=1000):
+    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 10, max_horizon=1000):
         Memory.__init__(self)
         self.method_name = 'MSMSA'
         self.lam = lam
         self.min_memory_len = min_memory_len
         self.num_anchors = num_anchors
         self.t = 0
-        self.num_candids = 100
-        self.initialize_horizon_candidates(min_horizon=self.min_memory_len, max_horizon=max_horizon, num_candids=self.num_candids)
+        # self.num_candids = 1000
+        self.hyperparams = {'lam':lam,
+                            'num_anchors': self.num_anchors,
+                            'min_memory_len': self.min_memory_len,
+                            'max_horizon': max_horizon,
+                            }
+        self.initialize_horizon_candidates(min_horizon=self.min_memory_len, max_horizon=max_horizon)
+        
         # self.initialize_anchors()
         # self.models = [[]]*self.num_candids
         self.avars = np.empty([self.num_candids, self.num_anchors])
         self.avars[:] = np.nan
         self.first_sample = True
 
-        self.hyperparams = {'lam':lam,
-                            'num_anchors': self.num_anchors,
-                            'min_memory_len': self.min_memory_len,
-                            }
 
-    def initialize_horizon_candidates(self, min_horizon, max_horizon, num_candids):
+
+    def initialize_horizon_candidates(self, min_horizon, max_horizon):
         # self.hor_candids = list(np.unique([max(int(1.15**j), min_horizon) for j in range(1, self.num_candids+1)]))
         # self.hor_candids = [i for i in self.hor_candids if i <= max_horizon]
-        self.hor_candids = np.linspace(min_horizon, max_horizon, num=num_candids, dtype=int)
+        candid = min_horizon
+        self.hor_candids = []
+        while candid <= max_horizon:
+            self.hor_candids.append(candid)
+
+            # candid = int(2*candid)
+            # candid = int(1.15*candid)
+            candid = candid + 1
+
+        # self.hor_candids = np.arange(min_horizon, max_horizon, 1, dtype=int)
+        # self.hor_candids = np.linspace(min_horizon, max_horizon, num=num_candids, dtype=int)
+        # add 'linear_hor_candids' to the hyperparams
+        self.num_candids = len(self.hor_candids)
+        self.hyperparams['hor_candids'] = self.hor_candids
+        self.hyperparams['num_candids'] = self.num_candids
+        
         # self.hor_candids = np.array(self.hor_candids)
         
 

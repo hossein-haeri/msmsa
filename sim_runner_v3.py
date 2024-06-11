@@ -51,7 +51,7 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
     if base_learner_name == 'RF':
         # base_learner = learning_models.RandomForest(n_estimators=20, bootstrap=True, n_jobs=-1, max_depth=7)
         # base_learner = RandomForestRegressor(n_estimators=50, max_depth=7, n_jobs=4, bootstrap=True, max_samples=0.8)
-        base_learner = make_pipeline(StandardScaler(), RandomForestRegressor(n_estimators=100, max_depth=6, n_jobs=4, bootstrap=True, max_samples=.2))
+        base_learner = make_pipeline(StandardScaler(), RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.8))
         base_learner.__class__.__name__ = 'RandomForestRegressor'
     elif base_learner_name == 'LNR':
         # base_learner = learning_models.Linear()
