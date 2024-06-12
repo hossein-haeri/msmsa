@@ -28,7 +28,7 @@ datasets = [
             # 'Teconer_10K'
 ]
 
-tag = 'msmsa_horizon_analysis_melbourne_housing'
+tag = 'msmsa_horizon_analysis_v2'
 # List of methods
 methods = [
             # 'DTH',

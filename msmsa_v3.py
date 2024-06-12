@@ -41,8 +41,8 @@ class MSMSA(Memory):
         while candid <= max_horizon:
             self.hor_candids.append(candid)
 
-            # candid = int(2*candid)
-            candid = int(1.15*candid)
+            candid = int(2*candid)
+            # candid = int(1.15*candid)
             # candid = candid + 1
 
         # self.hor_candids = np.arange(min_horizon, max_horizon, 1, dtype=int)
