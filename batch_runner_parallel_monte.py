@@ -28,7 +28,7 @@ datasets = [
             # 'Teconer_10K'
 ]
 
-tag = 'msmsa_horizon_analysis_melbourne_housing'
+tag = 'msmsa_anchor_analysis_melbourne_housing'
 # List of methods
 methods = [
             # 'DTH',
@@ -42,7 +42,7 @@ base_learners = ['RF']
 
 
 # Number of repetitions
-repetitions = 10
+repetitions = 50
 # Function to run the command silently
 def run_simulation(dataset, method, base_learner, seed, tag):
     command = f'python sim_runner_v3.py "{dataset}" {method} {base_learner} {seed} {tag}'
