@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 class MSMSA(Memory):
 
-    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 10, max_horizon=1000):
+    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 50, max_horizon=1000):
         Memory.__init__(self)
         self.method_name = 'MSMSA'
         self.lam = lam
@@ -42,8 +42,8 @@ class MSMSA(Memory):
             self.hor_candids.append(candid)
 
             # candid = int(2*candid)
-            # candid = int(1.15*candid)
-            candid = candid + 1
+            candid = int(1.15*candid)
+            # candid = candid + 1
 
         # self.hor_candids = np.arange(min_horizon, max_horizon, 1, dtype=int)
         # self.hor_candids = np.linspace(min_horizon, max_horizon, num=num_candids, dtype=int)
