@@ -4,13 +4,13 @@ from collections import deque
 import copy
 import sys
 from utility.memory import Memory
-
+import pickle
 from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
 
 class MSMSA(Memory):
 
-    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 3, max_horizon=1000):
+    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 100, max_horizon=4000):
         Memory.__init__(self)
         self.method_name = 'MSMSA'
         self.lam = lam
@@ -42,8 +42,8 @@ class MSMSA(Memory):
             self.hor_candids.append(candid)
 
             # candid = int(2*candid)
-            # candid = int(1.15*candid)
-            candid = candid + 1
+            candid = int(1.10*candid)
+            # candid = candid + 1
 
         # self.hor_candids = np.arange(min_horizon, max_horizon, 1, dtype=int)
         # self.hor_candids = np.linspace(min_horizon, max_horizon, num=num_candids, dtype=int)
@@ -55,9 +55,15 @@ class MSMSA(Memory):
         # self.hor_candids = np.array(self.hor_candids)
         
 
-    def initialize_anchors(self, num_features):
-        # self.anchors = np.random.uniform(low=-1, high=1, size=(self.num_anchors, self.num_features))
-        self.anchors = np.random.normal(0, scale=1, size=(self.num_anchors, num_features))
+    def initialize_anchors(self, num_features, use_prior_anchors=None):
+        if use_prior_anchors is not None:
+            with open('melbourne_anchor_samples.pkl', 'rb') as f:
+                anchors = pickle.load(f)
+            # select a random subset of the prior anchors
+            self.anchors = anchors['uniform']
+        else:
+            # self.anchors = np.random.uniform(low=0, high=1, size=(self.num_anchors, num_features))
+            self.anchors = np.random.normal(0, scale=1, size=(self.num_anchors, num_features))
         self.anochor_preds = np.zeros((self.num_candids, self.num_anchors))
 
     def update_online_model(self, X, y, fit_base_learner=True):

@@ -28,7 +28,7 @@ datasets = [
             # 'Teconer_10K'
 ]
 
-tag = 'msmsa_anchor_analysis_melbourne_housing'
+tag = 'msmsa_anchor_uniform'
 # List of methods
 methods = [
             # 'DTH',
@@ -42,14 +42,14 @@ base_learners = ['RF']
 
 
 # Number of repetitions
-repetitions = 50
+repetitions = 20
 # Function to run the command silently
 def run_simulation(dataset, method, base_learner, seed, tag):
     command = f'python sim_runner_v3.py "{dataset}" {method} {base_learner} {seed} {tag}'
-    subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    # subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
-    print(f"Executed: {dataset}, {method}, {base_learner}, seed:{seed}")
-    time.sleep(0.1)
+    # subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
+    print(f"Finished: {dataset}, {method}, {base_learner}, seed:{seed}")
+    # time.sleep(0.1)
 
 # Execute all combinations in parallel
 def execute_round(seed):
@@ -63,9 +63,9 @@ def execute_round(seed):
             for dataset in datasets:
                 for method in methods:
                     for base_learner in base_learners:
-                        print(f"Starting repetition {i+1}")
+                        print(f"Starting run {i+1} with seed {seed}")
                         tasks.append(executor.submit(run_simulation, dataset, method, base_learner, seed, tag))
-                        print(f"Finished repetition {i+1}")
+                        # print(f"Finished repetition {i+1}")
         # Wait for all tasks in the current round to complete
         for future in tasks:
             future.result()  # This line will block until the individual task is completed

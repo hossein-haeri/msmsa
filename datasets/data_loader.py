@@ -202,10 +202,14 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
     # if 'Hyper' in dataset_name:
         # include time (index) as a feature
     # data_X = np.column_stack((np.arange(len(data_X)), data_X))
-    scaler_X = StandardScaler()
-    data_X = scaler_X.fit_transform(data_X)
-    scaler_y = StandardScaler()
-    data_y = scaler_y.fit_transform(data_y.reshape(-1, 1)).squeeze()
+    # scaler_X = StandardScaler()
+
+    # scaler_X = MinMaxScaler()
+    # data_X = scaler_X.fit_transform(data_X)
+    # scaler_y = StandardScaler()
+    # data_y = scaler_y.fit_transform(data_y.reshape(-1, 1)).squeeze()
+    scaler_X = None
+    scaler_y = None
 
     if 'Teconer' in dataset_name:
         return data_X, data_y, scaler_X, scaler_y, trip_ids
