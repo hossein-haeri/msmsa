@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 class MSMSA(Memory):
 
-    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 100, max_horizon=1000):
+    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 3, max_horizon=1000):
         Memory.__init__(self)
         self.method_name = 'MSMSA'
         self.lam = lam
