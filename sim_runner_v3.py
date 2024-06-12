@@ -38,20 +38,20 @@ from sklearn.svm import SVR
 from sklearn.neural_network import MLPRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-def rescale(data, scaler):
-    return scaler.inverse_transform(data).squeeze()
+# def rescale(data, scaler):
+#     return scaler.inverse_transform(data).squeeze()
 
 
 def run(online_model_name, base_learner_name, dataset_name, synthetic_param, seed=None):
     
-    data_X, data_y, scaler_X, scaler_y, hyper_w = load_dataset(dataset_name, synthetic_param, seed=int(seed))
+    data_X, data_y, hyper_w = load_dataset(dataset_name, synthetic_param, seed=int(seed))
 
     if base_learner_name == 'RF':
         # base_learner = learning_models.RandomForest(n_estimators=20, bootstrap=True, n_jobs=-1, max_depth=7)
         # base_learner = RandomForestRegressor(n_estimators=50, max_depth=7, n_jobs=4, bootstrap=True, max_samples=0.8)
-        base_learner = make_pipeline(StandardScaler(), RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.8))
+        base_learner = make_pipeline(MinMaxScaler(), RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.8))
         base_learner.__class__.__name__ = 'RandomForestRegressor'
     elif base_learner_name == 'LNR':
         # base_learner = learning_models.Linear()
@@ -124,10 +124,10 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
         else:
             online_model.update_online_model(X_with_time, y, fit_base_learner=False)
 
-        # retransform y and y_pred back to original scale
-        y = rescale(np.array(y.reshape(-1,1)), scaler_y)
-        y_pred = rescale(np.array(y_pred).reshape(-1,1), scaler_y)
-        X = rescale(X.reshape(1,-1), scaler_X)
+        # # retransform y and y_pred back to original scale
+        # y = rescale(np.array(y.reshape(-1,1)), scaler_y)
+        # y_pred = rescale(np.array(y_pred).reshape(-1,1), scaler_y)
+        # X = rescale(X.reshape(1,-1), scaler_X)
 
         # num_train_samples = len(online_model.samples)
         if 'MSMSA' in online_model.method_name:
@@ -152,8 +152,8 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
             wandb.log(log_dict)
         
 
-    logger.sclaer_y = scaler_y
-    logger.scaler_X = scaler_X
+    # logger.sclaer_y = scaler_y
+    # logger.scaler_X = scaler_X
     logger.method_name = online_model.method_name
     logger.hyperparams = online_model.hyperparams
     logger.hyperparams['base_learner_params'] = base_learner_param

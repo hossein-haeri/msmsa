@@ -96,8 +96,8 @@ class Logger:
         self.len_stream = None
 
 
-    def rescale(y, scaler):
-        return scaler.inverse_transform(np.asarray(y).reshape(-1, 1))
+    # def rescale(y, scaler):
+    #     return scaler.inverse_transform(np.asarray(y).reshape(-1, 1))
     
     def log(self, y, y_pred, num_train_samples=None, X=None):
         self.y.append(y)

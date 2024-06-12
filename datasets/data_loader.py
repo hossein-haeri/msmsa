@@ -208,13 +208,11 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
     # data_X = scaler_X.fit_transform(data_X)
     # scaler_y = StandardScaler()
     # data_y = scaler_y.fit_transform(data_y.reshape(-1, 1)).squeeze()
-    scaler_X = None
-    scaler_y = None
 
     if 'Teconer' in dataset_name:
-        return data_X, data_y, scaler_X, scaler_y, trip_ids
+        return data_X, data_y, trip_ids
 
     # else:
     #     return data_X, data_y, scaler_X, scaler_y
-    return data_X, data_y, scaler_X, scaler_y, data_w
+    return data_X, data_y, data_w
 
