@@ -41,8 +41,7 @@ methods = [
 base_learners = ['RF']
 
 
-# Number of repetitions
-repetitions = 25
+
 # Function to run the command silently
 def run_simulation(dataset, method, base_learner, seed, tag):
     command = f'python sim_runner_v3.py "{dataset}" {method} {base_learner} {seed} {tag}'
@@ -57,7 +56,8 @@ def execute_round(seed):
 
         # Create a list of all tasks for the executor
         tasks = []
-        
+        # Number of repetitions
+        repetitions = 25
         for i in range(repetitions):
             seed += 1
             for dataset in datasets:
@@ -74,7 +74,7 @@ def execute_round(seed):
 # seed = 1000
 # for i in range(repetitions):
 #     seed += 1
-seed = 1000
+seed = 1200
 
 execute_round(seed)
 

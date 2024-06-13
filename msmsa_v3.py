@@ -18,11 +18,13 @@ class MSMSA(Memory):
         self.min_memory_len = min_memory_len
         self.num_anchors = num_anchors
         self.t = 0
+        self.b = 5
         # self.num_candids = 1000
         self.hyperparams = {'lam':lam,
                             'num_anchors': self.num_anchors,
                             'min_memory_len': self.min_memory_len,
                             'max_horizon': max_horizon,
+                            'b': self.b
                             }
         self.initialize_horizon_candidates(min_horizon=self.min_memory_len, max_horizon=max_horizon)
         
@@ -42,8 +44,9 @@ class MSMSA(Memory):
             self.hor_candids.append(candid)
 
             # candid = int(2*candid)
+            candid = int(self.b*candid)
             # candid = int(1.10*candid)
-            candid = candid + 1
+            # candid = candid + 1
 
         # self.hor_candids = np.arange(min_horizon, max_horizon, 1, dtype=int)
         # self.hor_candids = np.linspace(min_horizon, max_horizon, num=num_candids, dtype=int)
