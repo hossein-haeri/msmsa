@@ -115,7 +115,10 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
         # make y noisy
         y = y + np.random.normal(0, 0.1)
         
-        X_with_time = np.append(k/len(data_y),X).reshape(1,-1)
+        if 'MSMSA' not in online_model.method_name:
+            X_with_time = np.append(k/len(data_y),X).reshape(1,-1)
+        else:
+            X_with_time = X.reshape(1,-1)
 
         y_pred = online_model.predict_online_model(X_with_time)[0]
 

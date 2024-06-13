@@ -7,10 +7,11 @@ from utility.memory import Memory
 import pickle
 from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
+import pandas as pd
 
 class MSMSA(Memory):
 
-    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 100, max_horizon=4000):
+    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 500, max_horizon=4000):
         Memory.__init__(self)
         self.method_name = 'MSMSA'
         self.lam = lam
@@ -32,7 +33,6 @@ class MSMSA(Memory):
         self.first_sample = True
 
 
-
     def initialize_horizon_candidates(self, min_horizon, max_horizon):
         # self.hor_candids = list(np.unique([max(int(1.15**j), min_horizon) for j in range(1, self.num_candids+1)]))
         # self.hor_candids = [i for i in self.hor_candids if i <= max_horizon]
@@ -42,8 +42,8 @@ class MSMSA(Memory):
             self.hor_candids.append(candid)
 
             # candid = int(2*candid)
-            candid = int(1.10*candid)
-            # candid = candid + 1
+            # candid = int(1.10*candid)
+            candid = candid + 1
 
         # self.hor_candids = np.arange(min_horizon, max_horizon, 1, dtype=int)
         # self.hor_candids = np.linspace(min_horizon, max_horizon, num=num_candids, dtype=int)
@@ -53,20 +53,49 @@ class MSMSA(Memory):
         self.hyperparams['num_candids'] = self.num_candids
         
         # self.hor_candids = np.array(self.hor_candids)
-        
+    
 
-    def initialize_anchors(self, num_features, use_prior_anchors=None):
-        if use_prior_anchors is not None:
-            with open('melbourne_anchor_samples.pkl', 'rb') as f:
-                anchors = pickle.load(f)
-            # select a random subset of the prior anchors
-            self.anchors = anchors['uniform']
-        else:
-            # self.anchors = np.random.uniform(low=0, high=1, size=(self.num_anchors, num_features))
-            self.anchors = np.random.normal(0, scale=1, size=(self.num_anchors, num_features))
-        self.anochor_preds = np.zeros((self.num_candids, self.num_anchors))
+
+    def initialize_anchors(self, num_features):
+        # if use_prior_anchors is not None:
+            # with open('melbourne_anchor_samples.pkl', 'rb') as f:
+            #     anchors = pickle.load(f)
+            # # select a random subset of the prior anchors
+            # self.anchors = anchors['exact']
+            use_prior_anchors = 'exact'
+
+            df = pd.read_csv('datasets/melbourne_housing_clean.csv').dropna()
+            df = df[['Lattitude','Longtitude','YearBuilt','BuildingArea','Landsize','Car','Bathroom','Bedroom2','Distance']]
+
+            n = self.num_anchors
+            # select n random samples (np.array) within the min max range
+            if use_prior_anchors == 'uniform':
+                samples = np.zeros((n, num_features))
+                for i in range(num_features):
+                    samples[:, i] = np.random.uniform(df.describe().loc['min'].iloc[i], df.describe().loc['max'].iloc[i], n)
+
+
+            if use_prior_anchors == 'normal':
+                # sample n random normal samples (np.array) within the mean std range
+                samples = np.zeros((n, num_features))
+                for i in range(num_features):
+                    samples[:,i] = np.random.normal(df.describe().loc['mean'].iloc[i], df.describe().loc['std'].iloc[i], n)
+
+            if use_prior_anchors == 'exact':
+                # sample n random samples from the dataset withou replacement
+                samples = df.sample(n).to_numpy()
+            
+            self.anchors = samples
+
+        # else:
+        #     # self.anchors = np.random.uniform(low=0, high=1, size=(self.num_anchors, num_features))
+        #     self.anchors = np.random.normal(0, scale=1, size=(self.num_anchors, num_features))
+
+            self.anochor_preds = np.zeros((self.num_candids, self.num_anchors))
 
     def update_online_model(self, X, y, fit_base_learner=True):
+        # # drop the first feature which is the time
+        # X = X[:,1:]
         self.add_sample(X, y)
         if self.first_sample:
             self.initialize_anchors(X.shape[1])

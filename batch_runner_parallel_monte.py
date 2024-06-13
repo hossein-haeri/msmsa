@@ -28,7 +28,7 @@ datasets = [
             # 'Teconer_10K'
 ]
 
-tag = 'msmsa_anchor_uniform'
+tag = 'horizon_analysis'
 # List of methods
 methods = [
             # 'DTH',
@@ -42,12 +42,12 @@ base_learners = ['RF']
 
 
 # Number of repetitions
-repetitions = 20
+repetitions = 25
 # Function to run the command silently
 def run_simulation(dataset, method, base_learner, seed, tag):
     command = f'python sim_runner_v3.py "{dataset}" {method} {base_learner} {seed} {tag}'
-    # subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
+    subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
     print(f"Finished: {dataset}, {method}, {base_learner}, seed:{seed}")
     # time.sleep(0.1)
 

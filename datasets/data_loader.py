@@ -130,11 +130,13 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         data_y = df['cnt'].to_numpy()
 
     if dataset_name == 'Melbourne housing':
-        df = pd.read_csv('datasets/Melbourne_housing_full_sorted.csv').dropna()
+        # df = pd.read_csv('datasets/Melbourne_housing_full_sorted.csv').dropna()
+        # data_y = df['Price'].to_numpy()
+        # data_X = df[['Lattitude','Longtitude','YearBuilt','BuildingArea','Landsize','Car','Bathroom','Bedroom2','Distance']].to_numpy()
+        df = pd.read_csv('datasets/melbourne_housing_clean.csv').dropna()
         data_y = df['Price'].to_numpy()
         data_X = df[['Lattitude','Longtitude','YearBuilt','BuildingArea','Landsize','Car','Bathroom','Bedroom2','Distance']].to_numpy()
-        # data_X = df[['YearBuilt','BuildingArea','Landsize','Car','Bathroom','Bedroom2','Distance']].to_numpy()
-        # data_X = df[['Lattitude','Longtitude']].to_numpy()
+
 
     if dataset_name == 'Air quality':
         df = pd.read_csv('datasets/AirQualityUCI.csv').dropna()
