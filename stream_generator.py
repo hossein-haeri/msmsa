@@ -37,6 +37,37 @@ def hyper_abrupt_half_drift(systhetic_param, seed=None):
     return stream
 
 
+def hyper_noise_drift(systhetic_param, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
+    stream_size = systhetic_param['stream_size']
+    noise_var = systhetic_param['noise_var']
+    hyperplane_dimension = systhetic_param['dim']
+    drift_probability = systhetic_param['drift_prob']
+
+    stream = []
+    # initialize and normalize w
+    w_initial = np.random.normal(0,scale=1,size=hyperplane_dimension)
+
+    w = w_initial
+    noise_var = np.random.uniform(0, 20)
+    # w = w / np.linalg.norm(w)
+    for k in range(stream_size):
+        if np.random.uniform() < drift_probability:
+            noise_var = np.random.uniform(0, 20)
+        if drift_probability == -1 and k == int(stream_size/2):
+            noise_var = np.random.uniform(0, 20)
+        # draw uniform random samples 
+        X = np.random.uniform(-10, 10, hyperplane_dimension)
+        # create the target parameter using the features
+
+        y = np.dot(X,w)
+        # make the stream noisy
+        y = y + np.random.normal(0, noise_var)
+        stream.append([X, y, w])
+    return stream
+
+
 def hyper_abrupt(systhetic_param, seed=None):
     if seed is not None:
         np.random.seed(seed)

@@ -8,28 +8,28 @@ import pickle
 from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
 import pandas as pd
+from tabulate import tabulate
 
 class MSMSA(Memory):
 
-    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 500, max_horizon=4000):
+    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 80, max_horizon=2000):
         Memory.__init__(self)
         self.method_name = 'MSMSA'
         self.lam = lam
         self.min_memory_len = min_memory_len
         self.num_anchors = num_anchors
         self.t = 0
-        self.b = 5
-        # self.num_candids = 1000
+        self.b = 1.15
+        self.use_prior_anchors = 'uniform'
         self.hyperparams = {'lam':lam,
                             'num_anchors': self.num_anchors,
                             'min_memory_len': self.min_memory_len,
                             'max_horizon': max_horizon,
-                            'b': self.b
+                            'b': self.b,
+                            'anchors_distribution': self.use_prior_anchors
                             }
         self.initialize_horizon_candidates(min_horizon=self.min_memory_len, max_horizon=max_horizon)
         
-        # self.initialize_anchors()
-        # self.models = [[]]*self.num_candids
         self.avars = np.empty([self.num_candids, self.num_anchors])
         self.avars[:] = np.nan
         self.first_sample = True
@@ -44,7 +44,10 @@ class MSMSA(Memory):
             self.hor_candids.append(candid)
 
             # candid = int(2*candid)
-            candid = int(self.b*candid)
+            if self.b is None:
+                candid = candid = candid + 1
+            else:
+                candid = int(self.b*candid)
             # candid = int(1.10*candid)
             # candid = candid + 1
 
@@ -55,76 +58,86 @@ class MSMSA(Memory):
         self.hyperparams['hor_candids'] = self.hor_candids
         self.hyperparams['num_candids'] = self.num_candids
         
-        # self.hor_candids = np.array(self.hor_candids)
+        self.hor_candids = np.array(self.hor_candids)
     
+    def initialize_anchors(self, data_X=None, feature_bounds=None):
+        # feature_bounds is a 2D array with shape (num_features, 2) where the first column is the min value of each feature and the second column is the max value of each feature
+        if data_X is None and feature_bounds is None:
+            raise ValueError('Either data_X or feature_bounds should be provided')
+        if data_X is None and feature_bounds is not None:
+            num_features = len(feature_bounds)
+            self.anchors = np.random.uniform(feature_bounds[:,0], feature_bounds[:,1], (self.num_anchors, num_features))
+        if data_X is not None:
+            num_features = data_X.shape[1]
+            if self.use_prior_anchors == 'uniform':
+                # get the min and max values of each feature in data_X
+                min_values = np.min(data_X, axis=0)
+                max_values = np.max(data_X, axis=0)
+                # create the anchors by sampling uniformly from the min and max values
+                self.anchors = np.random.uniform(min_values, max_values, (self.num_anchors, num_features))
+            if self.use_prior_anchors == 'normal':
+                # get the mean and std values of each feature in data_X
+                mean_values = np.mean(data_X, axis=0)
+                std_values = np.std(data_X, axis=0)
+                # create the anchors by sampling normally from the mean and std values
+                self.anchors = np.random.normal(mean_values, std_values, (self.num_anchors, num_features))
+            if self.use_prior_anchors == 'exact':
+                # sample n random samples from the dataset without replacement
+                self.anchors = data_X[np.random.choice(data_X.shape[0], self.num_anchors, replace=False), :]
+        
+
+        self.previous_anchor_preds = np.empty([self.num_candids, self.num_anchors])
+        self.previous_anchor_preds[:] = np.nan
+        
+        
+        self.avars_scalarized = np.empty((self.num_candids))
+        self.avars_scalarized[:] = np.nan
+        
 
 
-    def initialize_anchors(self, num_features):
-        # if use_prior_anchors is not None:
-            # with open('melbourne_anchor_samples.pkl', 'rb') as f:
-            #     anchors = pickle.load(f)
-            # # select a random subset of the prior anchors
-            # self.anchors = anchors['exact']
-            use_prior_anchors = 'exact'
 
-            df = pd.read_csv('datasets/melbourne_housing_clean.csv').dropna()
-            df = df[['Lattitude','Longtitude','YearBuilt','BuildingArea','Landsize','Car','Bathroom','Bedroom2','Distance']]
-
-            n = self.num_anchors
-            # select n random samples (np.array) within the min max range
-            if use_prior_anchors == 'uniform':
-                samples = np.zeros((n, num_features))
-                for i in range(num_features):
-                    samples[:, i] = np.random.uniform(df.describe().loc['min'].iloc[i], df.describe().loc['max'].iloc[i], n)
-
-
-            if use_prior_anchors == 'normal':
-                # sample n random normal samples (np.array) within the mean std range
-                samples = np.zeros((n, num_features))
-                for i in range(num_features):
-                    samples[:,i] = np.random.normal(df.describe().loc['mean'].iloc[i], df.describe().loc['std'].iloc[i], n)
-
-            if use_prior_anchors == 'exact':
-                # sample n random samples from the dataset withou replacement
-                samples = df.sample(n).to_numpy()
-            
-            self.anchors = samples
-
-        # else:
-        #     # self.anchors = np.random.uniform(low=0, high=1, size=(self.num_anchors, num_features))
-        #     self.anchors = np.random.normal(0, scale=1, size=(self.num_anchors, num_features))
-
-            self.anochor_preds = np.zeros((self.num_candids, self.num_anchors))
 
     def update_online_model(self, X, y, fit_base_learner=True):
         # # drop the first feature which is the time
         # X = X[:,1:]
         self.add_sample(X, y)
         if self.first_sample:
-            self.initialize_anchors(X.shape[1])
+            # self.initialize_anchors(X.shape[1])
             self.models = [copy.deepcopy(self.base_learner) for _ in range(self.num_candids)]
             self.first_sample = False
 
         self.t += 1
+        
         for tau_indx, tau in enumerate(self.hor_candids):
             # if there are enough number of new samples to build a model across this horizon
             if self.t%tau == 0:
                 # create a new model across this horizon (tau)
                 self.models[tau_indx].fit(self.get_X(only_last=tau), self.get_y(only_last=tau))
                 # get the prediction of the model at the anchor points
+
                 new_anchor_preds = self.models[tau_indx].predict(self.anchors).squeeze()
-                
+
                 if not np.isnan(self.avars[tau_indx,0]): 
                     # update the allan variance value for this horizon
-                    self.avars[tau_indx,:] = (1-self.lam) * self.avars[tau_indx,:] + self.lam  * (new_anchor_preds - self.anochor_preds[tau_indx, :])**2
+                    self.avars[tau_indx,:] = (1-self.lam) * self.avars[tau_indx,:] + self.lam  * (new_anchor_preds - self.previous_anchor_preds[tau_indx, :])**2
                 else: # if this is the first time we are updating the allan variance just use the new predictions (no need for rolling exp average)
-                    self.avars[tau_indx,:] = (new_anchor_preds - self.anochor_preds[tau_indx, :])**2
-                
-                # update the anchor predictions
-                self.anochor_preds[tau_indx, :] = new_anchor_preds
+                    self.avars[tau_indx,:] = (new_anchor_preds - self.previous_anchor_preds[tau_indx, :])**2
 
+                self.previous_anchor_preds[tau_indx, :] = new_anchor_preds
+
+                self.avars_scalarized[tau_indx] = np.mean(self.avars[tau_indx, :])
+
+
+        # print('ts: ', self.t, 'avars: \n', tabulate(self.avars, tablefmt="grid"))
         # average between all anchor points
-        self.avars_scalarized = np.mean(self.avars, axis=1)
+
+        # self.avars_scalarized = np.mean(self.avars, axis=1)
+        # append the self.avars_scalarized vector to the msmsa_avars.csv file (create one if it does not exist)
+        # with open('msmsa_avars.csv', 'a') as f:
+        #     # np.savetxt(f, self.avars_scalarized.reshape(1,-1), delimiter=',')
+        #     np.savetxt(f, self.avars_scalarized.reshape(1,-1), delimiter=',')
+        
+        # update the validity horizon
         self.update_validity_horizon()
         
         if fit_base_learner:

@@ -54,9 +54,10 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
     if dataset_name == 'Teconer_10K':
         df = pd.read_csv('datasets/Teconer_2018_Jan_light_10K.csv').dropna()
         # pickle the df 
-        df.to_pickle(dataset_name+'_records.pkl')
+        # df.to_pickle(dataset_name+'_records.pkl')
         # print(df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].head())
-        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
+        # data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
+        data_X = df[['Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
         # trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
 
@@ -64,8 +65,9 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         df = pd.read_csv('datasets/Teconer_2018_Jan_light_100K.csv').dropna()
         # pickle the df 
         print(df.columns)
-        df.to_pickle(dataset_name+'_records.pkl')
-        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
+        # df.to_pickle(dataset_name+'_records.pkl')
+        # data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
+        data_X = df[['Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
         trip_ids = df['TripID'].to_numpy(dtype=int)
         # print(trip_ids)
         data_y = df['Friction'].to_numpy()
@@ -189,6 +191,14 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
 
     if dataset_name == 'Hyper-HT':
         stream = stream_generator.hyper_abrupt_half_drift(synthetic_param, seed=seed)
+        # print(stream[0])
+        data_X = np.array([item[0] for item in stream])
+        data_y = np.array([item[1] for item in stream])
+        data_w = np.array([item[2] for item in stream])
+
+
+    if dataset_name == 'Hyper-ND':
+        stream = stream_generator.hyper_noise_drift(synthetic_param, seed=seed)
         # print(stream[0])
         data_X = np.array([item[0] for item in stream])
         data_y = np.array([item[1] for item in stream])

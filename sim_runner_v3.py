@@ -45,7 +45,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 
 def run(online_model_name, base_learner_name, dataset_name, synthetic_param, seed=None):
-    
+
     data_X, data_y, hyper_w = load_dataset(dataset_name, synthetic_param, seed=int(seed))
 
     if base_learner_name == 'RF':
@@ -104,18 +104,17 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
     logger = Logger()
 
     y_pred = 0
-
+    
     if 'MSMSA' in online_model.method_name:
         online_model.max_horizon = len(data_y)
+        online_model.initialize_anchors(data_X)
 
     stream_bar = tqdm(zip(data_X, data_y), leave=False, disable=False, total=len(data_y))
 
     for k, (X, y) in enumerate(stream_bar):
 
-        # make y noisy
-        y = y + np.random.normal(0, 0.1)
-        
-        if 'MSMSA' not in online_model.method_name:
+
+        if online_model.method_name in ['DTH']:
             X_with_time = np.append(k/len(data_y),X).reshape(1,-1)
         else:
             X_with_time = X.reshape(1,-1)
@@ -191,7 +190,7 @@ else:
 if 'Hyper' in dataset_name:
     synthetic_param = {'noise_var': 0.1, # [0, 1, 2, 3, 4, 5]
                        'stream_size': 1_000,
-                       'drift_prob':0.005,
+                       'drift_prob':0.05,
                        'dim': 5}
 else:
     synthetic_param = None

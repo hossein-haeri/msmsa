@@ -8,6 +8,7 @@ import time
 # wandb_enable = True
 datasets = [
             # 'Hyper-HT',
+            # 'Hyper-ND',
 
             # 'Hyper-A',
             # 'Hyper-I',
@@ -19,16 +20,16 @@ datasets = [
             # 'Bike (daily)',
             # 'Bike (hourly)',
             # 'Household energy',
-            'Melbourne housing',
+            # 'Melbourne housing',
             # 'Air quality',
 
             # 'Friction',
             # 'NYC taxi',
             # 'Teconer_100K',
-            # 'Teconer_10K'
+            'Teconer_10K'
 ]
 
-tag = 'horizon_analysis'
+tag = 'msmsa_real_time_excluded'
 # List of methods
 methods = [
             # 'DTH',
@@ -46,7 +47,7 @@ base_learners = ['RF']
 def run_simulation(dataset, method, base_learner, seed, tag):
     command = f'python sim_runner_v3.py "{dataset}" {method} {base_learner} {seed} {tag}'
     subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    # subprocess.run(command, shell=True, stdout=subprocess.DEVNULL)
+    # subprocess.run(command, shell=True)
     print(f"Finished: {dataset}, {method}, {base_learner}, seed:{seed}")
     # time.sleep(0.1)
 
@@ -57,7 +58,7 @@ def execute_round(seed):
         # Create a list of all tasks for the executor
         tasks = []
         # Number of repetitions
-        repetitions = 25
+        repetitions = 10
         for i in range(repetitions):
             seed += 1
             for dataset in datasets:
@@ -74,7 +75,7 @@ def execute_round(seed):
 # seed = 1000
 # for i in range(repetitions):
 #     seed += 1
-seed = 1200
+seed = 1000
 
 execute_round(seed)
 
