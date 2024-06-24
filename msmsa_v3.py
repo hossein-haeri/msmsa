@@ -12,15 +12,15 @@ from tabulate import tabulate
 
 class MSMSA(Memory):
 
-    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 80, max_horizon=2000):
+    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 10, max_horizon=5000):
         Memory.__init__(self)
         self.method_name = 'MSMSA'
         self.lam = lam
         self.min_memory_len = min_memory_len
         self.num_anchors = num_anchors
         self.t = 0
-        self.b = 1.15
-        self.use_prior_anchors = 'uniform'
+        self.b = None
+        self.use_prior_anchors = 'normal'
         self.hyperparams = {'lam':lam,
                             'num_anchors': self.num_anchors,
                             'min_memory_len': self.min_memory_len,
@@ -46,10 +46,11 @@ class MSMSA(Memory):
             # candid = int(2*candid)
             if self.b is None:
                 candid = candid = candid + 1
-            else:
+            elif self.b > 1:
                 candid = int(self.b*candid)
-            # candid = int(1.10*candid)
-            # candid = candid + 1
+            else:
+                raise ValueError('b should be greater than 1 (exponental) or None (all possible horizons)')
+
 
         # self.hor_candids = np.arange(min_horizon, max_horizon, 1, dtype=int)
         # self.hor_candids = np.linspace(min_horizon, max_horizon, num=num_candids, dtype=int)
@@ -73,6 +74,7 @@ class MSMSA(Memory):
                 # get the min and max values of each feature in data_X
                 min_values = np.min(data_X, axis=0)
                 max_values = np.max(data_X, axis=0)
+
                 # create the anchors by sampling uniformly from the min and max values
                 self.anchors = np.random.uniform(min_values, max_values, (self.num_anchors, num_features))
             if self.use_prior_anchors == 'normal':
@@ -147,9 +149,12 @@ class MSMSA(Memory):
 
     def update_validity_horizon(self):
         if not all(np.isnan(v) for v in self.avars_scalarized): # check for warm start condition
-            idx = self.index_of_minimum(self.avars_scalarized)
-            self.validity_horizon_index = max(idx+1, len(self.hor_candids)-1)
-            self.validity_horizon = self.hor_candids[idx]
+            # idx = self.index_of_minimum(self.avars_scalarized)
+            # self.validity_horizon_index = max(idx+1, len(self.hor_candids)-1)
+            # self.validity_horizon = self.hor_candids[idx]
+
+            min_tau, min_tau_index = fit_sigma_function_and_find_min_index(self.hor_candids, self.avars_scalarized)
+            self.validity_horizon = min(self.t, min_tau)
 
         else: # means all values in avars are nan and hence we are in the pure cold start period
             self.validity_horizon = self.t
@@ -169,4 +174,42 @@ class MSMSA(Memory):
         return adjusted_index
             
 
-        
+def fit_sigma_function_and_find_min_index(hor_candids, avars_scalarized):
+    """
+    Fit the function sigma(tau) = theta_1 * tau + theta_2 * (1 / tau)
+    and find the index of the minimum sigma value using the fitted model.
+    Ignores None or NaN values in avars_scalarized.
+    
+    Parameters:
+    hor_candids (np.ndarray): The tau values.
+    avars_scalarized (np.ndarray): The corresponding sigma(tau) values, with potential None or NaN.
+    
+    Returns:
+    tuple: (theta, min_index) where theta is np.ndarray [theta_1, theta_2]
+           and min_index is the index of the minimum sigma value in the filtered dataset.
+    """
+    # Convert avars_scalarized to numpy array and ensure hor_candids is a numpy array
+    avars_scalarized = np.array(avars_scalarized)
+    hor_candids = np.array(hor_candids)
+    
+    # Filter out None or NaN values
+    valid_indices = ~np.isnan(avars_scalarized) & ~np.isinf(avars_scalarized)
+    valid_hor_candids = hor_candids[valid_indices]
+    valid_avars_scalarized = avars_scalarized[valid_indices]
+    
+    # Create the design matrix for the valid values
+    A = np.vstack([valid_hor_candids, 1 / valid_hor_candids]).T
+    
+    # Solve for theta using least squares on valid values
+    theta, _, _, _ = np.linalg.lstsq(A, valid_avars_scalarized, rcond=None)
+    
+    # Compute sigma(tau) using the fitted model for all hor_candids
+    sigma_fitted = theta[0] * hor_candids + theta[1] / hor_candids
+    
+
+    # Find the index of the minimum sigma value
+    min_index = np.argmin(sigma_fitted)
+    min_tau = hor_candids[min_index]
+    
+    return min_tau, min_index
+    

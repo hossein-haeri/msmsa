@@ -50,17 +50,18 @@ def hyper_noise_drift(systhetic_param, seed=None):
     w_initial = np.random.normal(0,scale=1,size=hyperplane_dimension)
 
     w = w_initial
-    noise_var = np.random.uniform(0, 20)
+    min_sigma = 0
+    max_sigma = 10
+    noise_var = np.random.uniform(min_sigma, max_sigma)
     # w = w / np.linalg.norm(w)
     for k in range(stream_size):
         if np.random.uniform() < drift_probability:
-            noise_var = np.random.uniform(0, 20)
+            noise_var = np.random.uniform(min_sigma, max_sigma)
         if drift_probability == -1 and k == int(stream_size/2):
-            noise_var = np.random.uniform(0, 20)
+            noise_var = np.random.uniform(min_sigma, max_sigma)
         # draw uniform random samples 
         X = np.random.uniform(-10, 10, hyperplane_dimension)
         # create the target parameter using the features
-
         y = np.dot(X,w)
         # make the stream noisy
         y = y + np.random.normal(0, noise_var)

@@ -115,43 +115,43 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
     if dataset_name == 'Household energy':
         df = pd.read_csv('datasets/household_power_consumption.csv').dropna()
         # df = df.reset_index().rename(columns={'index': 'index_col'})
-        data_y = df['Sub_metering_3'].to_numpy()[:10_000]
-        data_X = df[['Global_active_power','Global_active_power','Global_reactive_power','Voltage','Global_intensity','Sub_metering_1','Sub_metering_2']].to_numpy()[:10_000]
+        data_y = df['Sub_metering_3'].to_numpy()[:10_000].astype(float)
+        data_X = df[['Global_active_power','Global_active_power','Global_reactive_power','Voltage','Global_intensity','Sub_metering_1','Sub_metering_2']].to_numpy()[:10_000].astype(float)
 
     if dataset_name == 'Bike (daily)':
         df = pd.read_csv('datasets/bike_day.csv')
         # df = df.reset_index().rename(columns={'index': 'index_col'})
-        data_X = df[['workingday','mnth','holiday','weathersit','season','atemp','temp','hum','windspeed']].to_numpy()
+        data_X = df[['workingday','mnth','holiday','weathersit','season','atemp','temp','hum','windspeed']].to_numpy().astype(float)
         # data_X = df[['atemp','temp','hum','windspeed']].to_numpy()
-        data_y = df['cnt'].to_numpy()
+        data_y = df['cnt'].to_numpy().astype(float)
 
     if dataset_name == 'Bike (hourly)':
         df = pd.read_csv('datasets/bike_hour.csv')
-        data_X = df[['workingday','mnth','holiday','weathersit','season','atemp','temp','hum','windspeed']].to_numpy()
+        data_X = df[['workingday','mnth','holiday','weathersit','season','atemp','temp','hum','windspeed']].to_numpy().astype(float)
         # data_X = df[['atemp','temp','hum','windspeed']].to_numpy()
-        data_y = df['cnt'].to_numpy()
+        data_y = df['cnt'].to_numpy().astype(float)
 
     if dataset_name == 'Melbourne housing':
         # df = pd.read_csv('datasets/Melbourne_housing_full_sorted.csv').dropna()
         # data_y = df['Price'].to_numpy()
         # data_X = df[['Lattitude','Longtitude','YearBuilt','BuildingArea','Landsize','Car','Bathroom','Bedroom2','Distance']].to_numpy()
         df = pd.read_csv('datasets/melbourne_housing_clean.csv').dropna()
-        data_y = df['Price'].to_numpy()
-        data_X = df[['Lattitude','Longtitude','YearBuilt','BuildingArea','Landsize','Car','Bathroom','Bedroom2','Distance']].to_numpy()
+        data_y = df['Price'].to_numpy().astype(float)
+        data_X = df[['Lattitude','Longtitude','YearBuilt','BuildingArea','Landsize','Car','Bathroom','Bedroom2','Distance']].to_numpy().astype(float)
 
 
     if dataset_name == 'Air quality':
         df = pd.read_csv('datasets/AirQualityUCI.csv').dropna()
         df.drop(df[(df['CO(GT)'] == -200)].index, inplace=True)
         df = df.reset_index().rename(columns={'index': 'index_col'})
-        data_X = df[['PT08.S1(CO)','PT08.S2(NMHC)','PT08.S3(NOx)','PT08.S4(NO2)','PT08.S5(O3)','T','RH','AH']].to_numpy()
-        data_y = df['CO(GT)'].to_numpy()
+        data_X = df[['PT08.S1(CO)','PT08.S2(NMHC)','PT08.S3(NOx)','PT08.S4(NO2)','PT08.S5(O3)','T','RH','AH']].to_numpy().astype(float)
+        data_y = df['CO(GT)'].to_numpy().astype(float)
 
     if dataset_name == 'datasets/Friction':
         df = pd.read_csv('friction_2.csv', usecols = ['Latitude','Longitude','Height','Tsurf','Ta','Friction']).dropna()
         df = df.reset_index().rename(columns={'index': 'index_col'})
-        data_X = df[['Latitude','Longitude','Height','Tsurf','Ta']].to_numpy()
-        data_y = df['Friction'].to_numpy()
+        data_X = df[['Latitude','Longitude','Height','Tsurf','Ta']].to_numpy().astype(float)
+        data_y = df['Friction'].to_numpy().astype(float)
 
     if dataset_name == 'Hyper-A':
         stream = stream_generator.hyper_abrupt(synthetic_param, seed=seed)

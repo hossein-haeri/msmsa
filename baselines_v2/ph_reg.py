@@ -3,7 +3,7 @@ import numpy as np
 from river.drift import PageHinkley
 from utility.memory import Memory
 
-class PH(PageHinkley):
+class PH(PageHinkley, Memory):
     def __init__(self,min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001, min_memory_len=10):
         super().__init__(min_instances=30, delta=0.005, threshold=50, alpha=1-0.0001)
         Memory.__init__(self)
@@ -25,11 +25,7 @@ class PH(PageHinkley):
                 
                             }
 
-    # def add_sample(self, X, y):
-    #     self.memory.append((X, y))
-
     def detect(self, error):
-        # self.add_element(error)
         self.update(error)
         self.change_flag = self.drift_detected
         self.update_memory()
@@ -39,26 +35,13 @@ class PH(PageHinkley):
         if self.change_flag:
             self.forget_before(self.min_memory_len)
 
-    # def get_recent_data(self):
-    #     return self.memory
-
-
-    # def get_val_horizon(self):
-    #     return len(self.memory)
-
-
     def reset_detector(self):
         self.reset()
         self.memory = []
         self.change_flag = False
         self.change_flag_history = []
 
-    # def update_(self, model, error):
-    #     self.detect(error)
-    #     model.reset()
-    #     model.fit(self.memory)
-    #     return model, len(self.memory)
-    
+
     def update_online_model(self, X, y, fit_base_learner=True):
         self.add_sample(X, y)
         if self.base_learner_is_fitted:
@@ -69,15 +52,3 @@ class PH(PageHinkley):
         self.detect(error)
         if fit_base_learner:
             self.fit_to_memory()
-        # self.base_learner.reset()
-        # self.base_learner.fit(self.memory)
-        # if len(self.memory) > 1:
-        #     self.base_learner_is_fitted = True
-        # return None
-    
-    # def predict_online_model(self, X):
-    #     return self.base_learner.predict(X)
-    
-    
-    # def mean_absoulte_error(self, y_true, y_pred):
-    #     return np.mean(np.absolute(y_true - y_pred))

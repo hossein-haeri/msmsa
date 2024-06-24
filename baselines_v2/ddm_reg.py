@@ -1,5 +1,5 @@
 import numpy as np
-from utility.sample import Memory
+from utility.memory import Memory
 
 class DDM(Memory):
     def __init__(self, alpha_w=2, alpha_d=3, min_memory_len=10):
@@ -29,9 +29,6 @@ class DDM(Memory):
                             'alpha_d': self.alpha_d,
                             'min_memory_len': min_memory_len,
                     }
-        
-    # def add_sample(self, X, y):
-    #     self.memory.append((X, y))
         
     # detect potential changes given a new prediction error
     def detect(self, error):
@@ -96,35 +93,24 @@ class DDM(Memory):
     def reset_detector(self):
         self.__init__(self.alpha_w, self.alpha_d)
 
-    # def get_recent_data(self):
-    #     return self.memory
 
-    # def get_val_horizon(self):
-    #     return len(self.memory)
-    # def update_(self, model, error):
-    #     self.detect(error)
-    #     model.reset()
-    #     model.fit(self.memory)
-    #     return model, len(self.memory)
-
-    def update_online_model(self, X, y):
+    def update_online_model(self, X, y, fit_base_learner=True):
         self.add_sample(X, y)
+
         if self.base_learner_is_fitted:
             y_hat = self.predict_online_model(X)
         else:
             y_hat = 0
         error = self.mean_absoulte_error(y, y_hat)
         self.detect(error)
-        # self.
-        # self.base_learner.reset()
-        # self.base_learner.fit(self.memory)
-        self.fit_to_memory()
-        if len(self.memory) > 1:
-            self.base_learner_is_fitted = True
+        if fit_base_learner:
+            self.fit_to_memory()
+        # if len(self.memory) > 1:
+        #     self.base_learner_is_fitted = True
         return None
     
-    def predict_online_model(self, X):
-        return self.base_learner.predict(X)
+    # def predict_online_model(self, X):
+    #     return self.base_learner.predict(X)
     
     
     def mean_absoulte_error(self, y_true, y_pred):

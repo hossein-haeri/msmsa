@@ -18,7 +18,7 @@ from collections import deque
 class DTH(Memory):
     ''''' Time needs to be the first feature in the input data. '''''
     def __init__(self,
-                 epsilon=0.9,
+                 epsilon=0.6,
                  prior=0.5,
                  num_sub_predictions=20,
                  min_memory_len=10,

@@ -4,11 +4,12 @@ import numpy as np
 import os
 import sys
 import time
+
+
 # List of dataset names
-# wandb_enable = True
 datasets = [
             # 'Hyper-HT',
-            # 'Hyper-ND',
+            'Hyper-ND',
 
             # 'Hyper-A',
             # 'Hyper-I',
@@ -25,29 +26,46 @@ datasets = [
 
             # 'Friction',
             # 'NYC taxi',
-            # 'Teconer_100K',
-            'Teconer_10K'
+            # 'Teconer_100K',clea
+            # 'Teconer_10K'
 ]
 
-tag = 'msmsa_real_time_excluded'
+# Tag for the run
+tag = 'test3'
+
 # List of methods
 methods = [
             # 'DTH',
-            # 'KSWIN',
+            'KSWIN',
             'MSMSA',
+            # 'ADWIN',
+            # 'PH',
+            # 'DDM',
+            # 'Naive',
             ]
-# methods = ['DTH']
 
 # List of base learners
-base_learners = ['RF']
+base_learners = ['LNR']
+
+verbose = False
+
+wandb_log = True
+
+repetitions = 50
+
+# initial seed
+initial_seed = 1100
 
 
 
 # Function to run the command silently
-def run_simulation(dataset, method, base_learner, seed, tag):
-    command = f'python sim_runner_v3.py "{dataset}" {method} {base_learner} {seed} {tag}'
-    subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    # subprocess.run(command, shell=True)
+def run_simulation(dataset, method, base_learner, seed, wandb_log, tag):
+    command = f'python sim_runner_v3.py "{dataset}" {method} {base_learner} {seed} {wandb_log} {tag}'
+    if verbose:
+        subprocess.run(command, shell=True)
+    else:
+        subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
     print(f"Finished: {dataset}, {method}, {base_learner}, seed:{seed}")
     # time.sleep(0.1)
 
@@ -58,24 +76,20 @@ def execute_round(seed):
         # Create a list of all tasks for the executor
         tasks = []
         # Number of repetitions
-        repetitions = 10
+        
         for i in range(repetitions):
             seed += 1
             for dataset in datasets:
                 for method in methods:
                     for base_learner in base_learners:
                         print(f"Starting run {i+1} with seed {seed}")
-                        tasks.append(executor.submit(run_simulation, dataset, method, base_learner, seed, tag))
+                        tasks.append(executor.submit(run_simulation, dataset, method, base_learner, seed, wandb_log, tag))
                         # print(f"Finished repetition {i+1}")
         # Wait for all tasks in the current round to complete
         for future in tasks:
             future.result()  # This line will block until the individual task is completed
 
-# # Loop for each repetition
-# seed = 1000
-# for i in range(repetitions):
-#     seed += 1
-seed = 1000
 
-execute_round(seed)
+
+execute_round(initial_seed)
 

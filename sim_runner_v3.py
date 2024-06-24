@@ -174,23 +174,25 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
 wandb_log = True
 
 
-
 # get base_learner_name from the argument of the script
 dataset_name = sys.argv[1]
 online_model_name = sys.argv[2]
 base_learner_name = sys.argv[3]
 seed = sys.argv[4]
-if len(sys.argv) > 5:
-    tags = sys.argv[5:]
+# get wandb_log True/False from argument 5 of the script
+wandb_log = sys.argv[5] == 'True'
+
+if len(sys.argv) > 6:
+    tags = sys.argv[6:]
 else:
     tags = None
 
 
 
 if 'Hyper' in dataset_name:
-    synthetic_param = {'noise_var': 0.1, # [0, 1, 2, 3, 4, 5]
+    synthetic_param = {'noise_var': 1, # [0, 1, 2, 3, 4, 5]
                        'stream_size': 1_000,
-                       'drift_prob':0.05,
+                       'drift_prob':0.01,
                        'dim': 5}
 else:
     synthetic_param = None
