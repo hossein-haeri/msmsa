@@ -28,7 +28,7 @@ import msmsa_plus_v2 as msmsa_plus
 import neural_net_base_learner
 import wandb
 import os
-import dth
+import temporal_model_inference as tmi
 
 
 
@@ -162,7 +162,7 @@ for monte in tqdm(range(num_monte), position=0, leave=True):
                             # aue.AUE(min_memory_len=10, batch_size=20),
                             msmsa.MSMSA(lam=0.8, min_memory_len=10, num_anchors = 1000, max_horizon=10000),
                             # davar_reg.DAVAR(lam=10),
-                            # dth.DTH(epsilon=0.8),
+                            # tmi.TMI(epsilon=0.8),
                             # kswin_reg.KSWIN(),
                             # adwin_reg.ADWIN(delta=0.002),
                             # ddm_reg.DDM(alpha_w=2, alpha_d=3),

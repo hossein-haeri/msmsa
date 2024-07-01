@@ -12,7 +12,7 @@ from tabulate import tabulate
 
 class MSMSA(Memory):
 
-    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 10, max_horizon=5000):
+    def __init__(self, lam=0.8, min_memory_len=10, num_anchors = 100, max_horizon=5000):
         Memory.__init__(self)
         self.method_name = 'MSMSA'
         self.lam = lam
@@ -26,7 +26,8 @@ class MSMSA(Memory):
                             'min_memory_len': self.min_memory_len,
                             'max_horizon': max_horizon,
                             'b': self.b,
-                            'anchors_distribution': self.use_prior_anchors
+                            'anchors_distribution': self.use_prior_anchors,
+                            'method_name':self.method_name
                             }
         self.initialize_horizon_candidates(min_horizon=self.min_memory_len, max_horizon=max_horizon)
         

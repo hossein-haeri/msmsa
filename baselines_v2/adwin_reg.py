@@ -13,7 +13,8 @@ class ADWIN(AdaptiveWindowing, Memory):
         self.change_flag = False
         self.change_flag_history = []
         self.method_name = 'ADWIN'
-        self.hyperparams = {'delta':delta
+        self.hyperparams = {'delta':delta,
+                            'method_name':self.method_name
                             # 'min_memory_len':10
                             }
         

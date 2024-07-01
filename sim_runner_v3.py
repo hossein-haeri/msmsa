@@ -25,7 +25,7 @@ from baselines_v2 import naive_reg
 from baselines_v2 import aue_reg as aue
 import msmsa_v3 as msmsa
 import msmsa_plus_v2 as msmsa_plus
-import dth
+import temporal_model_inference as tmi
 import neural_net_base_learner
 import wandb
 from utility.utilities import Logger, Plotter
@@ -51,14 +51,16 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
     if base_learner_name == 'RF':
         # base_learner = learning_models.RandomForest(n_estimators=20, bootstrap=True, n_jobs=-1, max_depth=7)
         # base_learner = RandomForestRegressor(n_estimators=50, max_depth=7, n_jobs=4, bootstrap=True, max_samples=0.8)
-        base_learner = make_pipeline(MinMaxScaler(), RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.8))
-        base_learner.__class__.__name__ = 'RandomForestRegressor'
+        # base_learner = make_pipeline(MinMaxScaler(), RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.8))
+        # base_learner.__class__.__name__ = 'RandomForestRegressor'
+        base_learner = RandomForestRegressor(n_estimators=50, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.2)
+        
     elif base_learner_name == 'LNR':
         # base_learner = learning_models.Linear()
         base_learner = Ridge(alpha=0.1, fit_intercept = True)
     elif base_learner_name == 'DT':
         # base_learner = learning_models.DecissionTree(max_depth=7)
-        base_learner = DecisionTreeRegressor(max_depth=7)
+        base_learner = DecisionTreeRegressor(max_depth=5)
     elif base_learner_name == 'SVR':
         # base_learner = learning_models.SVReg()
         base_learner = SVR(kernel='rbf', C=10, gamma=0.3, epsilon=.1)
@@ -92,8 +94,8 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
         online_model = naive_reg.Naive()
     elif online_model_name == 'AUE':
         online_model = aue.AUE(min_memory_len=10, batch_size=20)
-    elif online_model_name == 'DTH':
-        online_model = dth.DTH()
+    elif online_model_name == 'TMI':
+        online_model = tmi.TMI()
     else:
         print('Online learner not found')
 
@@ -114,17 +116,17 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
     for k, (X, y) in enumerate(stream_bar):
 
 
-        if online_model.method_name in ['DTH']:
-            X_with_time = np.append(k/len(data_y),X).reshape(1,-1)
+        if 'TMI' in online_model.method_name:
+            X_ = np.append(k/len(data_y),X).reshape(1,-1)
         else:
-            X_with_time = X.reshape(1,-1)
+            X_ = X.reshape(1,-1)
 
-        y_pred = online_model.predict_online_model(X_with_time)[0]
+        y_pred = online_model.predict_online_model(X_)[0]
 
         if k%1 == 0:
-            online_model.update_online_model(X_with_time, y, fit_base_learner=True)
+            online_model.update_online_model(X_, y, fit_base_learner=True)
         else:
-            online_model.update_online_model(X_with_time, y, fit_base_learner=False)
+            online_model.update_online_model(X_, y, fit_base_learner=False)
 
         # # retransform y and y_pred back to original scale
         # y = rescale(np.array(y.reshape(-1,1)), scaler_y)
@@ -154,8 +156,6 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
             wandb.log(log_dict)
         
 
-    # logger.sclaer_y = scaler_y
-    # logger.scaler_X = scaler_X
     logger.method_name = online_model.method_name
     logger.hyperparams = online_model.hyperparams
     logger.hyperparams['base_learner_params'] = base_learner_param
@@ -165,10 +165,7 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
     logger.summary['MAPE'] = np.mean(np.abs(np.array(logger.errors) / np.array(logger.y)))
     logger.summary['R2'] = 1 - np.sum(np.square(logger.errors)) / np.sum(np.square(np.array(logger.y) - np.mean(logger.y)))
 
-    # logger.finish()
-    
     return logger
-
 
 
 wandb_log = True
@@ -193,7 +190,7 @@ if 'Hyper' in dataset_name:
     synthetic_param = {'noise_var': 1, # [0, 1, 2, 3, 4, 5]
                        'stream_size': 1_000,
                        'drift_prob':0.01,
-                       'dim': 5}
+                       'dim': 1}
 else:
     synthetic_param = None
 
@@ -211,7 +208,7 @@ if wandb_log:
         wandb_run = wandb.init(project='stream_learning', entity='haeri-hsn', config=config, tags=tags)
 
 
-# print(config)
+
 log = run(
         online_model_name=online_model_name,
         dataset_name=dataset_name,
@@ -222,11 +219,11 @@ log = run(
 
 
 
-# config['summary'] = log.summary
+
 config.update(log.summary)
 config.update(log.hyperparams)
 
-# print(config)
+
 if wandb_log:
     # pickle logs
     directory = 'pickled_logs'

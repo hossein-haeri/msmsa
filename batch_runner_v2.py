@@ -8,6 +8,7 @@ import time
 
 # List of dataset names
 datasets = [
+    # 'Hyper-RG',
     # 'Hyper-HT',
     # 'Hyper-ND',
     # 'Hyper-A',
@@ -29,11 +30,19 @@ datasets = [
 
 # Tag for the run
 # tag = 'final_hyper_msmsa'
-tag = 'final_real_msmsa'
+# tag = 'final_real_msmsa'
+# tag = 'final_sythetic_dth_v2'
+# tag = 'final_real_dth_v2'
+
+# tag = 'final_regional_drift'
+tag = 'final_real'
+
 # tag = 'test'
+
+
 # List of methods
 methods = [
-    # 'DTH',
+    'TMI',
     'KSWIN',
     'MSMSA',
     'ADWIN',
@@ -49,7 +58,7 @@ verbose = False
 
 wandb_log = True
 
-repetitions = 50
+repetitions = 10
 
 # initial seed
 initial_seed = 1000
@@ -77,7 +86,6 @@ def execute_round(seed):
     with ThreadPoolExecutor() as executor:
         # Create a list of all tasks for the executor
         tasks = []
-        
         for i in range(repetitions):
             seed += 1
             for dataset in datasets:
@@ -88,8 +96,8 @@ def execute_round(seed):
                         future = executor.submit(run_simulation, dataset, method, base_learner, seed, wandb_log, tag)
                         tasks.append(future)
         
-            # Wait for all tasks in the current round to complete
-            for future in as_completed(tasks):
-                future.result()  # This line will block until the individual task is completed
+        # Wait for all tasks in the current round to complete
+        for future in as_completed(tasks):
+            future.result()  # This line will block until the individual task is completed
 
 execute_round(initial_seed)

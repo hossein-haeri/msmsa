@@ -22,6 +22,7 @@ class PH(PageHinkley, Memory):
                             'threshold':threshold,
                             'alpha':alpha,
                             'min_memory_len':min_memory_len,
+                            'method_name':self.method_name
                 
                             }
 

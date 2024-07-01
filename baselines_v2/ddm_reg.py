@@ -28,6 +28,7 @@ class DDM(Memory):
         self.hyperparams = {'alpha_w':alpha_w,
                             'alpha_d': self.alpha_d,
                             'min_memory_len': min_memory_len,
+                            'method_name':self.method_name
                     }
         
     # detect potential changes given a new prediction error

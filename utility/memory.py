@@ -49,11 +49,16 @@ class Memory:
             self.extend_memory()
         X_with_time = np.array(X_with_time).squeeze()
         y = np.array(y).squeeze()
-        t = X_with_time[0]
-        if self.current_time is None:
-                self.current_time = t
-        if self.current_time < t:
-                self.current_time = t
+
+        if X_with_time.ndim == 0:
+            t = None
+            self.current_time = None
+        else:
+            t = X_with_time[0]
+            if self.current_time is None:
+                    self.current_time = t
+            if self.current_time < t:
+                    self.current_time = t
 
         self.X[self.next_available_spot_in_memory] = X_with_time
         self.y[self.next_available_spot_in_memory] = y

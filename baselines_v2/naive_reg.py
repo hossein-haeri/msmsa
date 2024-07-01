@@ -7,6 +7,7 @@ class Naive(Memory):
         self.method_name = 'Naive'
         self.t = 0
         self.hyperparams = {
+            'method_name':self.method_name
             }
 
     def update_memory(self):
