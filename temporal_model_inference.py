@@ -21,13 +21,14 @@ class TMI(Memory):
                  prior=0.5,
                  num_sub_predictions=20,
                  min_memory_len=10,
+                 probabilistic_prediction=False
                  ):
         super().__init__()
 
         ### hyper-parameters
         self.epsilon = epsilon
         self.prior = prior
-        self.probabilistic_prediction = False # 'previously_trained_models'/ 'ensemble' / 'drop-out' / False
+        self.probabilistic_prediction = probabilistic_prediction # 'previously_trained_models'/ 'ensemble' / 'drop-out' / False
         self.num_sub_predictions = num_sub_predictions
         self.min_memory_len = min_memory_len
         self.max_elimination_per_pruning = 10
@@ -108,9 +109,9 @@ class TMI(Memory):
             y_hat_i = self.predict_online_model(X_with_t_i)
             y_hat_c = self.predict_online_model(X_with_t_c)
 
-            d_i = np.abs(y_hat_i - y)
-            d_c = np.abs(y_hat_c - y)
-            prb_y_given_x_and_t_i = (d_c + 1e-9) / (d_i + d_c + 1e-9)
+            loss_i = np.abs(y_hat_i - y)
+            loss_c = np.abs(y_hat_c - y)
+            prb_y_given_x_and_t_i = (loss_c + 1e-9) / (loss_i + loss_c + 1e-9)
 
 
         else: # probablistic prediction
@@ -132,7 +133,8 @@ class TMI(Memory):
             prob_y_c  = np.exp(-0.5 * ( (y - mu_c)/sigma_c)**2 ) / (sigma_c)
             prob_y_i =  np.exp(-0.5 * ( (y - mu_i)/sigma_i)**2 ) / (sigma_i)
 
-            prb_y_given_x_and_t_i = (prob_y_i + 1e-9) / (prob_y_i + prob_y_c + 1e-9)
+            prb_y_given_x_and_t_i = (prob_y_i) / (prob_y_i + prob_y_c)
+
 
             # print(prb_y_given_x_and_t_i)
         return prb_y_given_x_and_t_i
