@@ -123,6 +123,7 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
 
         y_pred = online_model.predict_online_model(X_)[0]
 
+
         if k%1 == 0:
             online_model.update_online_model(X_, y, fit_base_learner=True)
         else:
@@ -164,6 +165,7 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
     logger.summary['RMSE'] = np.sqrt(np.mean(np.square(logger.errors)))
     logger.summary['MAPE'] = np.mean(np.abs(np.array(logger.errors) / np.array(logger.y)))
     logger.summary['R2'] = 1 - np.sum(np.square(logger.errors)) / np.sum(np.square(np.array(logger.y) - np.mean(logger.y)))
+    
 
     return logger
 

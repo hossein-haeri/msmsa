@@ -151,7 +151,6 @@ class TMI(Memory):
             return self.base_learner.make_uncertain_predictions(X_batch_with_time, num_samples=self.num_sub_predictions)
 
         elif self.probabilistic_prediction == 'previously_trained_models':
-
             y_pred = np.zeros((len(self.model_memory), X_batch_with_time.shape[0]))
             for i, model in enumerate(self.model_memory):
                 y_pred[i,:] = model.predict(X_batch_with_time)

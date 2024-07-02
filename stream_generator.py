@@ -48,36 +48,55 @@ def regional_drift(systhetic_param, seed=None):
 
     stream = []
 
-    drift_dim = np.random.randint(0, hyperplane_dimension)
+    
     
     initial_flat = np.random.uniform(-10, 10)
     region_flat = initial_flat
 
-    region_start = 0
-    region_end = 0
+    region_start = -10
+    region_end = 10
 
-    w = 0
+    # w = np.zeros((stream_size, 4))
     y = initial_flat
-
+    drift_dim = np.random.randint(0, hyperplane_dimension)
+    t_start = 0
     for k in range(stream_size):
 
         X = np.random.uniform(-10, 10, hyperplane_dimension)
 
         if np.random.uniform() < drift_probability and drift_probability != -1:
         # if k == int(stream_size/2):
+            t_end = k
+            w = [drift_dim, t_start, t_end, region_start, region_end, region_flat]
+            t_start = k
+            drift_dim = np.random.randint(0, hyperplane_dimension)
             region_flat = np.random.uniform(-10, 10)
             # draw two random values between -10 and 10 and make y values for the region between (across drift_dim) them 0
+            
             region_start, region_end = np.random.uniform(-10, 10, 2)
             if region_start > region_end:
                 region_start, region_end = region_end, region_start
+            
+            
+        elif k == stream_size - 1:
+            t_end = k
+            w = [drift_dim, t_start, t_end, region_start, region_end, region_flat]   
+        else:
+            w = [-1 , -1, -1, -1, -1, -1]
         if region_start <= X[drift_dim] <= region_end:
             y = region_flat
         else:
             y = initial_flat
+
+        # w[k, 0] = drift_dim
+        # w[k, 1] = region_start
+        # w[k, 2] = region_end
+        # w[k, 3] = region_flat
         
         y_noisy = y + np.random.normal(0, noise_var)
 
         stream.append([X, y_noisy, w])
+
     return stream
 
 

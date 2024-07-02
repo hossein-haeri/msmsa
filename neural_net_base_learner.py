@@ -20,9 +20,22 @@ class RegressionNN(nn.Module):
         self.optimizer = None
         self.learning_rate = learning_rate
         self.epochs = epochs
-
+        self.mean = 0
+        self.std = 1
+        self.label_mean = None
+        self.label_std = None
+        self.epsilon = 1e-4
+    
+    # define a get_params method to get the model parameters
+    def get_params(self):
+        params = {'lr': self.learning_rate, 'epochs': self.epochs}
+        return params 
 
     def forward(self, x):
+        # use the normalization parameters to normalize the input
+        # Normalize the input
+        if self.mean is not None and self.std is not None:
+           x = (x - self.mean) / (self.std + self.epsilon)
         return self.model(x)
     
     def fit(self, X, y):
@@ -32,6 +45,25 @@ class RegressionNN(nn.Module):
         X = torch.tensor(X, dtype=torch.float32)
         y = torch.tensor(y, dtype=torch.float32)
         
+        # shuffle the data
+        indices = torch.randperm(X.size(0))
+        X = X[indices]
+        y = y[indices]
+
+        # if there is only one sample in the dataset, then do not normalize the data
+        if X.size(0) != 1:
+            # Normalize the input data and store the mean and std for later use
+            self.mean = X.mean(0)
+            self.std = X.std(0)
+            X = (X - self.mean) / (self.std + self.epsilon)
+            
+            # Normalize the labels and store the mean and std for later use
+            self.label_mean = y.mean(0)
+            # if y is a 1D tensor, then y.std(0) will return a scalar tensor
+            self.label_std = y.std(0)
+            y = (y - self.label_mean) / (self.label_std + self.epsilon)
+
+
         for epoch in range(self.epochs):
             y_pred = self.forward(X).squeeze(1)
             loss = self.loss_fn(y_pred, y)
@@ -43,7 +75,11 @@ class RegressionNN(nn.Module):
         self.eval()  # Set the model to evaluation mode
         with torch.no_grad():
             X = torch.tensor(X, dtype=torch.float32)
-            return self.forward(X).numpy()
+            pred = self.forward(X).detach().cpu().numpy()[0]
+            if pred is not None:
+                return pred
+            else:
+                return 0
     
     def reset(self):
         # Reinitialize weights
@@ -75,8 +111,8 @@ class RegressionNN(nn.Module):
         mean = predictions.mean(0)
         std = predictions.std(0)
         # print(mean.numpy().shape, std.numpy().shape)
-        model_pred = self.model(X).squeeze(1).detach().numpy()
-        return model_pred, std.numpy().squeeze()
+        model_pred = self.model(X).squeeze(1).detach().cpu().numpy()
+        return model_pred, std.detach().cpu().numpy().squeeze()
         # return mean.numpy().squeeze(), std.numpy().squeeze()
 
 # The following calls are commented out and should be uncommented only after the user's approval:

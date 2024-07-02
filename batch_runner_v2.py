@@ -17,15 +17,15 @@ datasets = [
     # 'Hyper-LN',
     # 'Hyper-RW',
     # 'Hyper-GU',
-    'Bike (daily)',
+    # 'Bike (daily)',
     'Bike (hourly)',
-    'Household energy',
+    # 'Household energy',
     # 'Melbourne housing',
-    'Air quality',
+    # 'Air quality',
     # 'Friction',
     # 'NYC taxi',
     # 'Teconer_100K',
-    'Teconer_10K'
+    # 'Teconer_10K'
 ]
 
 # Tag for the run
@@ -35,36 +35,36 @@ datasets = [
 # tag = 'final_real_dth_v2'
 
 # tag = 'final_regional_drift'
-tag = 'final_real'
+# tag = 'final_real'
 
-# tag = 'test'
+tag = 'test'
 
 
 # List of methods
 methods = [
     'TMI',
-    'KSWIN',
-    'MSMSA',
-    'ADWIN',
-    'PH',
-    'DDM',
-    'Naive',
+    # 'KSWIN',
+    # 'MSMSA',
+    # 'ADWIN',
+    # 'PH',
+    # 'DDM',
+    # 'Naive',
 ]
 
 # List of base learners
-base_learners = ['RF']
+base_learners = ['NN']
 
-verbose = False
+verbose = True
 
 wandb_log = True
 
-repetitions = 10
+repetitions = 1
 
 # initial seed
 initial_seed = 1000
 
 # Maximum number of scripts running simultaneously
-max_running_scripts = 3  # Adjust this value as needed
+max_running_scripts = 5  # Adjust this value as needed
 
 # Semaphore to limit concurrent executions
 semaphore = Semaphore(max_running_scripts)

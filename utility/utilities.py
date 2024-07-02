@@ -106,6 +106,7 @@ class Logger:
             self.X.append(X)
         self.num_train_samples_list.append(num_train_samples)
         self.errors.append(np.abs(y - y_pred))
+
         
     
     def finish(self):
