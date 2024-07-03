@@ -17,7 +17,7 @@ from collections import deque
 class TMI(Memory):
     ''''' Time needs to be the first feature in the input data. '''''
     def __init__(self,
-                 epsilon=0.95,
+                 epsilon=0.9,
                  prior=0.5,
                  num_sub_predictions=20,
                  min_memory_len=10,

@@ -17,11 +17,11 @@ datasets = [
     # 'Hyper-LN',
     # 'Hyper-RW',
     # 'Hyper-GU',
-    'Bike (daily)',
-    'Bike (hourly)',
-    'Household energy',
-    'Melbourne housing',
-    'Air quality',
+    # 'Bike (daily)',
+    # 'Bike (hourly)',
+    # 'Household energy',
+    # 'Melbourne housing',
+    # 'Air quality',
     # 'Friction',
     # 'NYC taxi',
     # 'Teconer_100K',
@@ -59,7 +59,7 @@ verbose = False
 
 wandb_log = True
 
-repetitions = 1
+repetitions = 5
 
 # initial seed
 initial_seed = 1000

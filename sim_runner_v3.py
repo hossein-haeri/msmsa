@@ -54,8 +54,6 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
         # base_learner = make_pipeline(MinMaxScaler(), RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.8))
         # base_learner.__class__.__name__ = 'RandomForestRegressor'
         base_learner = RandomForestRegressor(n_estimators=100, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.9)
-        
-
     elif base_learner_name == 'LNR':
         # base_learner = learning_models.Linear()
         base_learner = Ridge(alpha=0.1, fit_intercept = True)

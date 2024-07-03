@@ -56,9 +56,9 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         # pickle the df 
         # df.to_pickle(dataset_name+'_records.pkl')
         # print(df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed']].head())
-        # data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
-        data_X = df[['Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
-        # trip_ids = df['TripID'].to_numpy(dtype=int)
+        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
+        # data_X = df[['Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
+        trip_ids = df['TripID'].to_numpy(dtype=int)
         data_y = df['Friction'].to_numpy()
 
     if dataset_name == 'Teconer_100K':
@@ -66,8 +66,8 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         # pickle the df 
         print(df.columns)
         # df.to_pickle(dataset_name+'_records.pkl')
-        # data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
-        data_X = df[['Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
+        data_X = df[['AbsoluteTime','Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
+        # data_X = df[['Latitude', 'Longitude','Tsurf', 'Ta','Hours','Speed','Months']].to_numpy()
         trip_ids = df['TripID'].to_numpy(dtype=int)
         # print(trip_ids)
         data_y = df['Friction'].to_numpy()
