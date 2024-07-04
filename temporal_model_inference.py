@@ -133,7 +133,7 @@ class TMI(Memory):
             prob_y_c  = np.exp(-0.5 * ( (y - mu_c)/sigma_c)**2 ) / (sigma_c)
             prob_y_i =  np.exp(-0.5 * ( (y - mu_i)/sigma_i)**2 ) / (sigma_i)
 
-            prb_y_given_x_and_t_i = (prob_y_i) / (prob_y_i + prob_y_c)
+            prb_y_given_x_and_t_i = (prob_y_i + 1e-5) / (prob_y_i + prob_y_c + 1e-5)
 
 
             # print(prb_y_given_x_and_t_i)
