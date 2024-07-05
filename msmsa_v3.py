@@ -19,7 +19,7 @@ class MSMSA(Memory):
         self.min_memory_len = min_memory_len
         self.num_anchors = num_anchors
         self.t = 0
-        self.b = None
+        self.b = 1.2
         self.use_prior_anchors = 'normal'
         self.hyperparams = {'lam':lam,
                             'num_anchors': self.num_anchors,

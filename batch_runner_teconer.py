@@ -7,40 +7,43 @@ import sys
 import time
 
 
-tag = 'teconer_final'
+# tag = 'teconer_final'
+tag = 'teconer_comparison'
 
 # List of dataset names
 datasets = [
     'Teconer_Jan_10K',
-    # 'Teconer_Downtown_10K',
-    # 'Teconer_Jan_100K',
-    # 'Teconer_Downtown_100K',
-    # 'Teconer_Jan_1M',
-    # 'Teconer_Downtown_1M',
+    'Teconer_Downtown_10K',
+    'Teconer_Jan_100K',
+    'Teconer_Downtown_100K',
+    'Teconer_Jan_1M',
+    'Teconer_Downtown_1M',
 ]
-preview_druations = [30, 60, 5*60, 10*60, 30*60]
-epsilons = [0.55, 0.6, 0.8]
+
+preview_windows = [5*60]
+
+
 # List of base learners
 base_learners = ['DT']
 # List of methods
 methods = [
     # 'PTMI',
     'TMI',
-    # 'KSWIN',
-    # 'MSMSA',
-    # 'ADWIN',
-    # 'PH',
-    # 'DDM',
-    # 'Naive',
+    'KSWIN',
+    'MSMSA',
+    'ADWIN',
+    'PH',
+    'DDM',
+    'Naive',
 ]
 
-
+epsilons = [0.95]
 
 verbose = False
 
 wandb_log = True
 
-repetitions = 5
+repetitions = 10
 
 # initial seed
 initial_seed = 1000
@@ -55,9 +58,12 @@ semaphore = Semaphore(max_running_scripts-1)
 def run_simulation(dataset, method, base_learner, epsilon, preview_druation, seed, wandb_log, tag):
     command = f'python sim_runner_teconer_trip_based.py "{dataset}" {method} {base_learner} {epsilon} {preview_druation} {seed} {wandb_log} {tag}'
     if verbose:
-        subprocess.run(command, shell=True)
+        subprocess.run(command, shell=True)    
     else:
+        print(f"Submitted: {dataset}, {method}, {base_learner}, seed:{seed}")
         subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        
     
     print(f"Finished: {dataset}, {method}, {base_learner}, seed:{seed}")
     # time.sleep(0.1)
@@ -70,12 +76,12 @@ def execute_round(seed):
         tasks = []
         for i in range(repetitions):
             seed += 1
+            print(f"---- Repeat {i+1} with seed {seed}")
             for dataset in datasets:
                 for method in methods:
-                    for preview_druation in preview_druations:
+                    for preview_druation in preview_windows:
                         for epsilon in epsilons:
                             for base_learner in base_learners:
-                                print(f"Starting run {i+1} with seed {seed}")
                                 semaphore.acquire()  # Acquire semaphore before starting a task
                                 future = executor.submit(run_simulation, dataset, method, base_learner, epsilon, preview_druation, seed, wandb_log, tag)
                                 tasks.append(future)
