@@ -7,19 +7,19 @@ import sys
 import time
 
 
-tag = 'teconer_final'
+tag = 'teconer_example'
 
 # List of dataset names
 datasets = [
-    'Teconer_Jan_10K',
+    # 'Teconer_Jan_10K',
     # 'Teconer_Downtown_10K',
-    # 'Teconer_Jan_100K',
-    # 'Teconer_Downtown_100K',
-    # 'Teconer_Jan_1M',
-    # 'Teconer_Downtown_1M',
+    'Teconer_Jan_100K',
+    'Teconer_Downtown_100K',
+    'Teconer_Jan_1M',
+    'Teconer_Downtown_1M',
 ]
-preview_druations = [30, 60, 5*60, 10*60, 30*60]
-epsilons = [0.55, 0.6, 0.8]
+preview_druations = [60, 5*60, 10*60]
+epsilons = [0.6]
 # List of base learners
 base_learners = ['DT']
 # List of methods
@@ -36,17 +36,17 @@ methods = [
 
 
 
-verbose = False
+verbose = True
 
-wandb_log = True
+wandb_log = False
 
-repetitions = 5
+repetitions = 1
 
 # initial seed
 initial_seed = 1000
 
 # Maximum number of scripts running simultaneously
-max_running_scripts = 4  # Adjust this value as needed
+max_running_scripts = 2  # Adjust this value as needed
 
 # Semaphore to limit concurrent executions
 semaphore = Semaphore(max_running_scripts-1)
