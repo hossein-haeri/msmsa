@@ -21,7 +21,8 @@ class TMI(Memory):
                  prior=0.5,
                  num_sub_predictions=20,
                  min_memory_len=10,
-                 probabilistic_prediction=False
+                 probabilistic_prediction=False,
+                 max_elimination=10
                  ):
         super().__init__()
 
@@ -31,7 +32,7 @@ class TMI(Memory):
         self.probabilistic_prediction = probabilistic_prediction # 'previously_trained_models'/ 'ensemble' / 'drop-out' / False
         self.num_sub_predictions = num_sub_predictions
         self.min_memory_len = min_memory_len
-        self.max_elimination_per_pruning = 10
+        self.max_elimination_per_pruning = max_elimination
 
 
         #### initialization
@@ -84,6 +85,7 @@ class TMI(Memory):
 
     def prune_memory(self, max_eliminations):
         elimination_prob = self.assess_memory()
+        # print('elimination_prob: ', elimination_prob)
         # Create a boolean array where the condition is True for samples that should be eliminated (deactivated)
         to_deactivate = (self.epsilon < elimination_prob) & (elimination_prob < 1)
         # Get the indices of the active samples in memory
