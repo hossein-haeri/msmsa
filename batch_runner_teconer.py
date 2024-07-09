@@ -53,7 +53,7 @@ repetitions = 1
 initial_seed = 1000
 
 # Maximum number of scripts running simultaneously
-max_running_scripts = 4  # Adjust this value as needed
+max_running_scripts = 13  # Adjust this value as needed
 
 # Semaphore to limit concurrent executions
 semaphore = Semaphore(max_running_scripts)
