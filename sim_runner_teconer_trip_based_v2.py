@@ -77,6 +77,7 @@ def run(online_model, dataset_name, preview_duration, columns, run_name=None):
             # randomly sample 1M records from the dataset
             df = df.sample(n=1000000, random_state=seed)
     
+    df = df.sort_values(by='UnixTime')
 
     num_records = len(df)
     trip_ids = df['TripID'].to_numpy(dtype=int)
@@ -153,7 +154,8 @@ def run(online_model, dataset_name, preview_duration, columns, run_name=None):
             num_training_samples.append(online_model.get_num_samples())
 
 
-                                                                                         
+        # display num_training_samples[-1] in the progress bar
+        stream_bar.set_description(f'num_training_samples: {num_training_samples[-1]}')                                                                      
          
    
 
@@ -234,7 +236,7 @@ elif online_model_name == 'Naive':
 
 
 if base_learner_name == 'RF':
-    online_model.base_learner = RandomForestRegressor(n_estimators=50, max_depth=7, n_jobs=-1, bootstrap=True, max_samples=.9, min_samples_leaf=5)
+    online_model.base_learner = RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=-1, bootstrap=True, max_samples=.8, min_samples_leaf=5)
 elif base_learner_name == 'DT':
     online_model.base_learner = DecisionTreeRegressor(max_depth=7, min_samples_leaf=5)
 
@@ -250,7 +252,8 @@ config = {
     'tags': tags
 }
 
-columns = ['UnixTime','Latitude', 'Longitude','Height','Speed', 'Direction', 'Ta', 'Tsurf', 'Ta', 'S1', 'S2', 'S3', 'S9', 'S10', 'S11', 'Hour', 'Month']
+columns = ['UnixTime','Latitude', 'Longitude','Height','Speed', 'Direction', 'Ta', 'Tsurf', 'S1', 'S2', 'S3', 'S9', 'S10', 'S11', 'Hour']
+# columns = ['UnixTime','Latitude', 'Longitude','Height','Speed', 'Direction', 'Ta', 'Tsurf','Hour']
 
 if wandb_log:
         wandb_run = wandb.init(project='stream_learning', entity='haeri-hsn', config=config, tags=tags)
