@@ -252,8 +252,8 @@ config = {
     'tags': tags
 }
 
-columns = ['UnixTime','Latitude', 'Longitude','Height','Speed', 'Direction', 'Ta', 'Tsurf', 'S1', 'S2', 'S3', 'S9', 'S10', 'S11', 'Hour']
-# columns = ['UnixTime','Latitude', 'Longitude','Height','Speed', 'Direction', 'Ta', 'Tsurf','Hour']
+# columns = ['UnixTime','Latitude', 'Longitude','Height','Speed', 'Direction', 'Ta', 'Tsurf', 'S1', 'S2', 'S3', 'S9', 'S10', 'S11', 'Hour']
+columns = ['UnixTime','Latitude', 'Longitude','Height','Speed', 'Direction', 'Ta', 'Tsurf','Hour']
 
 if wandb_log:
         wandb_run = wandb.init(project='stream_learning', entity='haeri-hsn', config=config, tags=tags)

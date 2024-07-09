@@ -7,7 +7,7 @@ import sys
 import time
 
 
-tag = 'teconer_final_v2'
+tag = 'teconer_final_v3'
 
 # List of dataset names
 datasets = [
@@ -17,15 +17,15 @@ datasets = [
     # 'Teconer_Jan_1M',
     # 'Teconer_Downtown_100K',
     # 'Teconer_Downtown_1M',
-    'teconer_helsinki_jan2018_100K'
+    # 'teconer_helsinki_jan2018_100K'
     # 'teconer_helsinki_jan2018_1M'
-    # 'teconer_helsinki_jan2018'
+    'teconer_helsinki_jan2018'
 
 ]
 
-preview_druations = [1*60, 5*60, 10*60, 30*60]
-# preview_druations = [5*60]
-epsilons = [0.95]
+# preview_druations = [1*60, 5*60, 10*60, 30*60]
+preview_druations = [5*60]
+epsilons = [0.55]
 # List of base learners
 base_learners = ['DT']
 # List of methods
@@ -52,7 +52,7 @@ repetitions = 1
 initial_seed = 1000
 
 # Maximum number of scripts running simultaneously
-max_running_scripts = 2  # Adjust this value as needed
+max_running_scripts = 4  # Adjust this value as needed
 
 # Semaphore to limit concurrent executions
 semaphore = Semaphore(max_running_scripts)
