@@ -17,14 +17,15 @@ datasets = [
     # 'Teconer_Jan_1M',
     # 'Teconer_Downtown_100K',
     # 'Teconer_Downtown_1M',
-    # 'teconer_helsinki_jan2018_100K'
+    'teconer_helsinki_jan2018_10K'
     # 'teconer_helsinki_jan2018_1M'
-    'teconer_helsinki_jan2018'
+    # 'teconer_helsinki_jan2018'
 
 ]
 
 # preview_druations = [1*60, 5*60, 10*60, 30*60]
 preview_druations = [5*60]
+# epsilons = [0.55, 0.7, 0.95]
 epsilons = [0.55]
 # List of base learners
 base_learners = ['DT']
