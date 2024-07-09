@@ -23,9 +23,10 @@ datasets = [
 
 ]
 
-# preview_druations = [1*60, 5*60, 10*60, 30*60]
-preview_druations = [5*60]
-epsilons = [0.55]
+preview_druations = [1*60, 5*60, 10*60, 30*60]
+
+# preview_druations = [1*60]
+epsilons = [0.7]
 # List of base learners
 base_learners = ['DT']
 # List of methods
@@ -52,7 +53,7 @@ repetitions = 1
 initial_seed = 1000
 
 # Maximum number of scripts running simultaneously
-max_running_scripts = 4  # Adjust this value as needed
+max_running_scripts = 1  # Adjust this value as needed
 
 # Semaphore to limit concurrent executions
 semaphore = Semaphore(max_running_scripts)
