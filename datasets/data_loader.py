@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 import stream_generator
-import torch
+# import torch
 
 # dataset_name = datasets[0]
 def load_dataset(dataset_name, synthetic_param=None, seed=None):
