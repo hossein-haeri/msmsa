@@ -108,7 +108,7 @@ class RegressionNN(nn.Module):
                 predictions.append(self.forward(X))
         
         predictions = torch.stack(predictions)
-        mean = predictions.mean(0)
+        # mean = predictions.mean(0)
         std = predictions.std(0)
         # print(mean.numpy().shape, std.numpy().shape)
         model_pred = self.model(X).squeeze(1).detach().cpu().numpy()

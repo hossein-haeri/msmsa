@@ -7,19 +7,22 @@ import sys
 import time
 
 
-tag = 'teconer_example'
+tag = 'teconer_final_v2'
 
 # List of dataset names
 datasets = [
     # 'Teconer_Jan_10K',
     # 'Teconer_Downtown_10K',
-    'Teconer_Jan_100K',
-    'Teconer_Downtown_100K',
-    'Teconer_Jan_1M',
-    'Teconer_Downtown_1M',
+    # 'Teconer_Jan_100K',
+    # 'Teconer_Jan_1M',
+    # 'Teconer_Downtown_100K',
+    # 'Teconer_Downtown_1M',
+    'teconer_helsinki_jan2018_100K'
+
 ]
-preview_druations = [60, 5*60, 10*60]
-epsilons = [0.6]
+
+preview_druations = [1*60, 5*60, 10*60, 30*60]
+epsilons = [0.95]
 # List of base learners
 base_learners = ['DT']
 # List of methods
@@ -36,9 +39,9 @@ methods = [
 
 
 
-verbose = True
+verbose = False
 
-wandb_log = False
+wandb_log = True
 
 repetitions = 1
 
@@ -46,14 +49,14 @@ repetitions = 1
 initial_seed = 1000
 
 # Maximum number of scripts running simultaneously
-max_running_scripts = 2  # Adjust this value as needed
+max_running_scripts = 8  # Adjust this value as needed
 
 # Semaphore to limit concurrent executions
 semaphore = Semaphore(max_running_scripts-1)
 
 # Function to run the command silently
 def run_simulation(dataset, method, base_learner, epsilon, preview_druation, seed, wandb_log, tag):
-    command = f'python sim_runner_teconer_trip_based.py "{dataset}" {method} {base_learner} {epsilon} {preview_druation} {seed} {wandb_log} {tag}'
+    command = f'python sim_runner_teconer_trip_based_v2.py "{dataset}" {method} {base_learner} {epsilon} {preview_druation} {seed} {wandb_log} {tag}'
     if verbose:
         subprocess.run(command, shell=True)
     else:

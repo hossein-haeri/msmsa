@@ -53,7 +53,7 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
         # base_learner = RandomForestRegressor(n_estimators=50, max_depth=7, n_jobs=4, bootstrap=True, max_samples=0.8)
         # base_learner = make_pipeline(MinMaxScaler(), RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.8))
         # base_learner.__class__.__name__ = 'RandomForestRegressor'
-        base_learner = RandomForestRegressor(n_estimators=100, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.9)
+        base_learner = RandomForestRegressor(n_estimators=100, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.9, max_leaf_nodes=5)
     elif base_learner_name == 'LNR':
         # base_learner = learning_models.Linear()
         base_learner = Ridge(alpha=0.1, fit_intercept = True)
@@ -94,9 +94,9 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
     elif online_model_name == 'AUE':
         online_model = aue.AUE(min_memory_len=10, batch_size=20)
     elif online_model_name == 'TMI':
-        online_model = tmi.TMI(epsilon=0.9)
+        online_model = tmi.TMI(epsilon=0.7)
     elif online_model_name == 'PTMI':
-        online_model = tmi.TMI(probabilistic_prediction='ensemble', epsilon=0.9)
+        online_model = tmi.TMI(probabilistic_prediction='ensemble', epsilon=0.7)
     else:
         print('Online learner not found')
 
