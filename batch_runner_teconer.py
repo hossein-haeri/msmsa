@@ -26,7 +26,7 @@ datasets = [
 preview_druations = [1*60, 5*60, 10*60, 30*60]
 
 # preview_druations = [1*60]
-epsilons = [0.7, 0.95]
+epsilons = [0.9]
 # List of base learners
 base_learners = ['DT']
 # List of methods
