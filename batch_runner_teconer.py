@@ -7,7 +7,7 @@ import numpy as np
 # import time
 
 
-tag = 'teconer_final_v3'
+tag = 'teconer_final_v4'
 
 # List of dataset names
 datasets = [
@@ -23,10 +23,10 @@ datasets = [
 
 ]
 
-preview_druations = [1*60, 5*60, 10*60, 30*60]
+# preview_druations = [1*60, 5*60, 10*60, 30*60]
 
-# preview_druations = [1*60]
-epsilons = [0.9]
+preview_druations = [1*60]
+epsilons = [0.95]
 # List of base learners
 base_learners = ['DT']
 # List of methods

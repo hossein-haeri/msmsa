@@ -70,9 +70,9 @@ class TMI(Memory):
         return X_with_current_time
 
 
-    def update_online_model(self, X, y, fit_base_learner=True, prune_memory=True):
-        
-        self.add_sample(X, y)
+    def update_online_model(self, X=None, y=None, fit_base_learner=True, prune_memory=True):
+        if X is not None:
+            self.add_sample(X, y)
         if fit_base_learner:
             self.fit_to_memory()
             if self.probabilistic_prediction == 'previously_trained_models':
