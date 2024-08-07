@@ -17,15 +17,17 @@ datasets = [
     # 'Hyper-LN',
     # 'Hyper-RW',
     # 'Hyper-GU',
-    'Bike (daily)',
-    'Bike (hourly)',
-    'Household energy',
-    'Melbourne housing',
-    'Air quality',
+
+    # 'Bike (daily)',
+    # 'Bike (hourly)',
+    # 'Household energy',
+    # 'Melbourne housing',
+    # 'Air quality',
     # 'Friction',
     # 'NYC taxi',
     # 'Teconer_100K',
-    'Teconer_10K'
+    'Helsinki friction (10K)'
+    # 'Helsinki friction (100K)'
 ]
 
 # Tag for the run
@@ -37,25 +39,26 @@ datasets = [
 # tag = 'final_regional_drift'
 # tag = 'final_real'
 
-tag = 'tmi_vs_ptmi_v2'
+# tag = 'tmi_vs_ptmi_v2'
+tag = 'kdd_2025_real'
 
 
 # List of methods
 methods = [
-    'PTMI',
-    'TMI',
-    # 'KSWIN',
-    # 'MSMSA',
-    # 'ADWIN',
-    # 'PH',
-    # 'DDM',
-    # 'Naive',
+    # 'PTMI',
+    # 'TMI',
+    'KSWIN',
+    'MSMSA',
+    'ADWIN',
+    'PH',
+    'DDM',
+    'Naive',
 ]
 
 # List of base learners
 base_learners = ['RF']
 
-verbose = True
+verbose = False
 
 wandb_log = True
 

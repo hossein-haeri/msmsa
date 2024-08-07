@@ -48,7 +48,18 @@ def load_dataset(dataset_name, synthetic_param=None, seed=None):
         #     data_X = data_X.cuda()
         #     data_y = data_y.cuda()
     
+    if dataset_name == 'Helsinki friction (10K)':
+        df = pd.read_csv('datasets/helsinki_10K.csv').dropna()
+        data_X = df[['UnixTime', 'Latitude', 'Longitude', 'Height', 'Speed', 'Direction', 'Ta', 'Tsurf', 'Hour', 'Day']].to_numpy()
+        data_X = df[['Latitude', 'Longitude', 'Height', 'Speed', 'Direction', 'Ta', 'Tsurf', 'Hour', 'Day']].to_numpy()
+        trip_ids = df['TripID'].to_numpy(dtype=int)
+        data_y = df['Friction'].to_numpy()
 
+    if dataset_name == 'Helsinki friction (100K)':
+        df = pd.read_csv('datasets/helsinki_100K.csv').dropna()
+        data_X = df[['UnixTime', 'Latitude', 'Longitude', 'Height', 'Speed', 'Direction', 'Ta', 'Tsurf', 'Hour', 'Day']].to_numpy()
+        trip_ids = df['TripID'].to_numpy(dtype=int)
+        data_y = df['Friction'].to_numpy()
 
 
     if dataset_name == 'Teconer_Jan_10K':

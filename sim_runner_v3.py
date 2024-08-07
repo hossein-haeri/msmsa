@@ -28,6 +28,7 @@ import msmsa_plus_v2 as msmsa_plus
 import temporal_model_inference as tmi
 import neural_net_base_learner
 import wandb
+wandb.require("core")
 from utility.utilities import Logger, Plotter
 
 
@@ -49,20 +50,14 @@ def run(online_model_name, base_learner_name, dataset_name, synthetic_param, see
     data_X, data_y, hyper_w = load_dataset(dataset_name, synthetic_param, seed=int(seed))
 
     if base_learner_name == 'RF':
-        # base_learner = learning_models.RandomForest(n_estimators=20, bootstrap=True, n_jobs=-1, max_depth=7)
-        # base_learner = RandomForestRegressor(n_estimators=50, max_depth=7, n_jobs=4, bootstrap=True, max_samples=0.8)
-        # base_learner = make_pipeline(MinMaxScaler(), RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.8))
-        # base_learner.__class__.__name__ = 'RandomForestRegressor'
-        base_learner = RandomForestRegressor(n_estimators=100, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.9, max_leaf_nodes=5)
+        base_learner = RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=4, bootstrap=True, max_samples=.9, max_leaf_nodes=5)
     elif base_learner_name == 'LNR':
-        # base_learner = learning_models.Linear()
-        base_learner = Ridge(alpha=0.1, fit_intercept = True)
+        base_learner = make_pipeline(StandardScaler(), Ridge(alpha=0.1, fit_intercept = True))
     elif base_learner_name == 'DT':
-        # base_learner = learning_models.DecissionTree(max_depth=7)
         base_learner = DecisionTreeRegressor(max_depth=5)
     elif base_learner_name == 'SVR':
-        # base_learner = learning_models.SVReg()
-        base_learner = SVR(kernel='rbf', C=10, gamma=0.3, epsilon=.1)
+        base_learner = make_pipeline(StandardScaler(), SVR(kernel='rbf', C=10, gamma=0.3, epsilon=.1))
+        # base_learner = SVR(kernel='rbf', C=10, gamma=0.3, epsilon=.1)
     elif base_learner_name == 'NN':
         # base_learner = learning_models.NeuralNet()
         base_learner = neural_net_base_learner.RegressionNN(    hidden_layers=[50, 50],

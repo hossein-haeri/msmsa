@@ -19,7 +19,7 @@ class MSMSA(Memory):
         self.min_memory_len = min_memory_len
         self.num_anchors = num_anchors
         self.t = 0
-        self.b = 1.2
+        self.b = -1
         self.use_prior_anchors = 'normal'
         self.hyperparams = {'lam':lam,
                             'num_anchors': self.num_anchors,
@@ -45,7 +45,7 @@ class MSMSA(Memory):
             self.hor_candids.append(candid)
 
             # candid = int(2*candid)
-            if self.b is None:
+            if self.b is None or -1:
                 candid = candid = candid + 1
             elif self.b > 1:
                 candid = int(self.b*candid)

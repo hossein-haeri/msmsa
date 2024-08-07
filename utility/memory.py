@@ -5,17 +5,13 @@ from sklearn.preprocessing import StandardScaler
 
 class Memory:
     def __init__(self, max_num_samples=None, num_features=None):
-        # make X as an array of shape (num_samples, num_features) with float64 dtype
-        # self.X = np.zeros((max_num_samples, num_features), dtype=np.float64)
-        # # make y as an array of shape (num_samples,) with float64 dtype
-        # self.y = np.zeros((max_num_samples,), dtype=np.float64)
-        # self.is_actives = np.zeros((max_num_samples,), dtype=np.bool_)
+
         self.next_available_spot_in_memory = 0
         self.current_time = None
         self.base_learner_is_fitted = False
         self.base_learner = None
         self.is_first_sample = True
-        self.max_model_memory_len = 10
+        # self.max_model_memory_len = 10
         
 
     def construct_memory(self, X):
@@ -39,7 +35,7 @@ class Memory:
         self.y = self.y[self.is_actives]
         self.is_actives = np.ones_like(self.y, dtype=np.bool_)
         self.next_available_spot_in_memory = len(self.is_actives)
-        # self.next_available_spot_in_memory = self.X.shape[0]
+
 
     def add_sample(self,X_with_time, y):
         if self.is_first_sample:
@@ -80,26 +76,7 @@ class Memory:
         if self.is_first_sample:
             return 0
         return np.sum(self.is_actives)
-        
-    # def get_X(self):
-    #     return self.X[self.is_actives, 1:]
-    
-    # def get_y(self):
-    #     return self.y[self.is_actives]
-    
-    # def get_t(self):
-    #     return self.X[self.is_actives, 0]
-    
-    # def get_X_with_time(self):
-    #     return self.X[self.is_actives]
 
-    # def get_X(self, only_last=None):
-    #     if only_last is None:
-    #         return self.X[self.is_actives]
-    #     else:
-    #         active_indices = np.flatnonzero(self.is_actives)
-    #         active_indices = active_indices[-only_last:]
-    #         return self.X[active_indices]
     
     def get_y(self, only_last=None):
         if only_last is None:
@@ -133,7 +110,6 @@ class Memory:
 
 
     
-
     def predict_online_model(self, X):
         if self.base_learner_is_fitted:
             return self.base_learner.predict(X)
