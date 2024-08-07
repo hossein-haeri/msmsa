@@ -2,12 +2,12 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Semaphore
 import numpy as np
-import os
-import sys
-import time
+# import os
+# import sys
+# import time
 
 
-tag = 'teconer_final_v3'
+tag = 'teconer_final_v4'
 
 # List of dataset names
 datasets = [
@@ -17,16 +17,16 @@ datasets = [
     # 'Teconer_Jan_1M',
     # 'Teconer_Downtown_100K',
     # 'Teconer_Downtown_1M',
-    # 'teconer_helsinki_jan2018_10K'
+    # 'teconer_helsinki_jan2018_100K'
     # 'teconer_helsinki_jan2018_1M'
     'teconer_helsinki_jan2018'
 
 ]
 
-preview_druations = [1*60, 5*60, 10*60, 30*60]
-# preview_druations = [5*60]
-epsilons = [0.55, 0.7, 0.95]
-# epsilons = [0.55]
+# preview_druations = [1*60, 5*60, 10*60, 30*60]
+
+preview_druations = [1*60]
+epsilons = [0.95]
 # List of base learners
 base_learners = ['DT']
 # List of methods

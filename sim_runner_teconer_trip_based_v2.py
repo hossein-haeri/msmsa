@@ -126,6 +126,8 @@ def run(online_model, dataset_name, preview_duration, columns, run_name=None):
 
         # predict the records that are in the preview window
         if is_predicted[k] == False:
+            if 'TMI' in online_model.method_name and k > 0:
+                online_model.update_online_model()
             # get preview indices from X_trip
             preview_indices = np.where((data_X[:, 0] >= current_abs_time) & (data_X[:, 0] < current_abs_time + preview_duration) & (trip_id_dict[trip_ids[k]]))[0]
             num_preview_points.append(len(preview_indices))
@@ -143,7 +145,7 @@ def run(online_model, dataset_name, preview_duration, columns, run_name=None):
 
         # update the online models with the current record
         if 'TMI' in online_model.method_name:
-            online_model.update_online_model(X, y, fit_base_learner=True)
+            online_model.update_online_model(X, y, fit_base_learner=False)
         else:
             online_model.update_online_model(X_without_time, y, fit_base_learner=True)
         
@@ -175,7 +177,7 @@ def run(online_model, dataset_name, preview_duration, columns, run_name=None):
     summary = {
         'average_records_per_trip': len(data_X)/len(np.unique(trip_ids)),
         'average_preview_records': np.mean(num_preview_points),
-        'training_size_log': num_training_samples,
+        # 'training_size_log': num_training_samples,
         'average_training_size': np.mean(num_training_samples),
         'preview_window': preview_duration,
         'learning_model': online_model.base_learner.__class__.__name__,
@@ -218,7 +220,7 @@ else:
 pickle_log = True
 
 if online_model_name == 'TMI':
-    online_model = tmi.TMI(epsilon=epsilon)
+    online_model = tmi.TMI(epsilon=epsilon, max_elimination=1000)
 elif online_model_name == 'PTMI':
     online_model = tmi.TMI(epsilon=epsilon, probabilistic_prediction='ensemble')
 elif online_model_name == 'MSMSA':
@@ -236,7 +238,7 @@ elif online_model_name == 'Naive':
 
 
 if base_learner_name == 'RF':
-    online_model.base_learner = RandomForestRegressor(n_estimators=20, max_depth=7, n_jobs=-1, bootstrap=True, max_samples=.8, min_samples_leaf=5)
+    online_model.base_learner = RandomForestRegressor(n_estimators=10, max_depth=7, n_jobs=-1, bootstrap=True, max_samples=.8, min_samples_leaf=5)
 elif base_learner_name == 'DT':
     online_model.base_learner = DecisionTreeRegressor(max_depth=7, min_samples_leaf=5)
 
