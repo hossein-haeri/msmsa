@@ -18,14 +18,14 @@ datasets = [
     # 'Hyper-RW',
     # 'Hyper-GU',
 
-    # 'Bike (daily)',
-    # 'Bike (hourly)',
-    # 'Household energy',
-    # 'Melbourne housing',
-    # 'Air quality',
+    'Bike (daily)',
+    'Bike (hourly)',
+    'Household energy',
+    'Melbourne housing',
+    'Air quality',
     # 'Friction',
     # 'NYC taxi',
-    # 'Teconer_100K',
+    'Teconer_Jan_10K',
     'Helsinki friction (10K)'
     # 'Helsinki friction (100K)'
 ]
@@ -56,16 +56,16 @@ methods = [
 ]
 
 # List of base learners
-base_learners = ['RF']
+base_learners = ['LNR','DT']
 
 verbose = False
 
 wandb_log = True
 
-repetitions = 1
+repetitions = 9
 
 # initial seed
-initial_seed = 1000
+initial_seed = 1001
 
 # Maximum number of scripts running simultaneously
 max_running_scripts = 5  # Adjust this value as needed
